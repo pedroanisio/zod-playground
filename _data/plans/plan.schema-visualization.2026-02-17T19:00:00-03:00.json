@@ -2,15 +2,26 @@
   "schemaVersion": "0.3.0",
   "metadata": {
     "planId": "plan.schema-visualization",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "createdAt": "2026-02-17T19:00:00-03:00",
-    "updatedAt": "2026-02-17T19:00:00-03:00",
+    "updatedAt": "2026-02-17T20:00:00-03:00",
     "authorId": "ai-agent",
     "snapshotRef": "00713df20eafa55972897512a95a0685a0335491",
     "branch": "main",
     "supersedes": [],
     "selfPath": "_data/plans/plan.schema-visualization.2026-02-17T19:00:00-03:00.json",
-    "versionHistory": []
+    "versionHistory": [
+      {
+        "toVersion": "1.1.0",
+        "fromVersion": "1.0.0",
+        "timestamp": "2026-02-17T20:00:00-03:00",
+        "authorizedBy": "human-operator",
+        "requestedBy": "ai-agent",
+        "justification": "Incorporate feedback from technical review FB-001: added CDN verification step, unit tests, accessibility, error UX, version pinning, primitive schema UX, rendering timeout, reversibility scope clarification.",
+        "diffSummary": "Added step-cdn-verify (XS) and step-unit-tests (S); enhanced step-hook with error UX, timeout, version pinning; enhanced step-component with a11y and primitive schema UX; expanded step-e2e with dark mode and error tests; added 2 acceptance criteria (a11y, version pinning); added 2 intent constraints; added decision dec-reversibility-scope; updated 3 risks.",
+        "revalidated": true
+      }
+    ]
   },
   "problem": {
     "problemStatement": "The Zod playground has no visual representation of schema structure. Users write Zod schemas and test values but cannot see ER diagrams, class diagrams, or flowcharts of their schema relationships, making it harder to understand complex nested schemas at a glance.",
@@ -71,15 +82,21 @@
       "kind": "source-file"
     },
     {
+      "id": "res-cdn-constants",
+      "path": "src/features/SchemaVisualization/cdn.ts",
+      "estimatedTokens": 50,
+      "kind": "source-file"
+    },
+    {
       "id": "res-viz-hook",
       "path": "src/features/SchemaVisualization/useSchemaVisualization.ts",
-      "estimatedTokens": 200,
+      "estimatedTokens": 250,
       "kind": "source-file"
     },
     {
       "id": "res-viz-component",
       "path": "src/features/SchemaVisualization/SchemaVisualization.tsx",
-      "estimatedTokens": 300,
+      "estimatedTokens": 350,
       "kind": "source-file"
     },
     {
@@ -89,9 +106,15 @@
       "kind": "source-file"
     },
     {
+      "id": "res-unit-test-viz",
+      "path": "tests/schemaVisualization.unit.ts",
+      "estimatedTokens": 200,
+      "kind": "test-file"
+    },
+    {
       "id": "res-e2e-test",
       "path": "tests/schemaVisualization.e2e.ts",
-      "estimatedTokens": 150,
+      "estimatedTokens": 200,
       "kind": "test-file"
     },
     {
@@ -138,6 +161,12 @@
         "label": "E2E test files for schema visualization",
         "includes": ["tests/schemaVisualization.e2e.ts"],
         "excludes": []
+      },
+      {
+        "id": "zone-unit-tests",
+        "label": "Unit test files for schema visualization hook",
+        "includes": ["tests/schemaVisualization.unit.ts"],
+        "excludes": []
       }
     ],
     "nonScope": [
@@ -183,7 +212,8 @@
       "authorizedZones": [
         "zone-viz-feature",
         "zone-app-integration",
-        "zone-e2e-tests"
+        "zone-e2e-tests",
+        "zone-unit-tests"
       ],
       "lifespan": {
         "kind": "unbounded",
@@ -203,7 +233,8 @@
       "authorizedZones": [
         "zone-viz-feature",
         "zone-app-integration",
-        "zone-e2e-tests"
+        "zone-e2e-tests",
+        "zone-unit-tests"
       ],
       "contextCapacity": 200000,
       "lifespan": {
@@ -270,6 +301,24 @@
         "declarationCost": 0
       },
       {
+        "id": "ic-cdn-verified",
+        "name": "CDN URLs resolve and library is compatible",
+        "temporalScope": { "kind": "single-step", "stepId": "step-cdn-verify" },
+        "modality": "structural",
+        "gradingKind": "boolean",
+        "predicateRef": "zod-mermaid and mermaid CDN imports resolve without error; zod-mermaid uses property-based schema introspection",
+        "declarationCost": 0
+      },
+      {
+        "id": "ic-unit-tests-pass",
+        "name": "Hook unit tests pass",
+        "temporalScope": { "kind": "single-step", "stepId": "step-unit-tests" },
+        "modality": "structural",
+        "gradingKind": "boolean",
+        "predicateRef": "npm run test:unit exits 0 with schemaVisualization.unit.ts included",
+        "declarationCost": 0
+      },
+      {
         "id": "ic-e2e-pass",
         "name": "All E2E tests pass",
         "temporalScope": { "kind": "single-step", "stepId": "step-e2e" },
@@ -312,25 +361,93 @@
   },
   "steps": [
     {
-      "id": "step-hook",
-      "title": "Create useSchemaVisualization hook",
-      "description": "Implement the core async hook that lazy-loads zod-mermaid and mermaid from CDN (cached after first load), debounces diagram generation (500ms), prevents stale renders via generation counter, and respects dark mode by re-initializing mermaid with theme:'dark' based on Mantine color scheme. Returns { svg, mermaidText, isLoading, error }.",
-      "size": "S",
+      "id": "step-cdn-verify",
+      "title": "Verify CDN availability and pin library versions",
+      "description": "Verify that zod-mermaid and mermaid resolve from jsDelivr CDN with +esm transform. Examine zod-mermaid source code to confirm schema introspection approach (property-based .def.type checks vs instanceof). Test in browser devtools that CDN import produces a usable module. Output a cdn.ts constants file with pinned version strings (ZOD_MERMAID_VERSION, MERMAID_VERSION) and constructed CDN URLs.",
+      "size": "XS",
       "assignedTo": "ai-agent",
       "dependsOn": [],
       "scopeZones": ["zone-viz-feature"],
       "fileChanges": [
         {
-          "path": "src/features/SchemaVisualization/useSchemaVisualization.ts",
+          "path": "src/features/SchemaVisualization/cdn.ts",
           "action": "create",
-          "description": "Custom React hook (~80 lines): CDN lazy-loading of zod-mermaid + mermaid, debounced diagram generation, stale render prevention, dark mode support",
-          "resourceId": "res-viz-hook"
+          "description": "CDN version constants (~15 lines): ZOD_MERMAID_VERSION, MERMAID_VERSION pinned to tested semver values, constructed CDN URLs for jsDelivr +esm imports",
+          "resourceId": "res-cdn-constants"
         }
       ],
       "blastRadius": [
         {
           "path": "src/features/SchemaVisualization/**",
           "impactDescription": "New file — no existing code affected",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "CDN URL resolves",
+          "command": "npx tsc --noEmit",
+          "passCriteria": "cdn.ts compiles without type errors; CDN URLs manually verified in browser devtools",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Library introspection approach confirmed",
+          "command": "npm run build",
+          "passCriteria": "zod-mermaid source examined; property-based schema introspection confirmed (not instanceof)",
+          "blocking": true,
+          "verifiedBy": "self",
+          "detectsScope": "zod-mermaid API compatibility with CDN-loaded Zod schemas",
+          "cannotDetect": "Runtime failures from undocumented zod-mermaid internal changes"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git rm src/features/SchemaVisualization/cdn.ts"
+      },
+      "stopConditions": [
+        {
+          "trigger": "CDN URL for zod-mermaid +esm returns 404 or module cannot be imported",
+          "action": "halt-and-escalate",
+          "escalateTo": "human-operator",
+          "maxRetries": 1,
+          "blindSpotRisk": "CDN availability is external — intermittent failures may not reproduce"
+        },
+        {
+          "trigger": "zod-mermaid uses instanceof checks that would fail with CDN-loaded Zod",
+          "action": "halt-and-escalate",
+          "escalateTo": "human-operator",
+          "maxRetries": 0,
+          "blindSpotRisk": "Source code review may miss dynamically constructed instanceof checks"
+        }
+      ],
+      "notes": "References: zod-mermaid (https://github.com/nicholasgasior/zod-mermaid), mermaid (https://github.com/mermaid-js/mermaid). This step addresses FBI-01 and FBI-07 from feedback FB-001.",
+      "commitTemplate": "chore(viz): add CDN version constants for zod-mermaid and mermaid",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-hook",
+      "title": "Create useSchemaVisualization hook",
+      "description": "Implement the core async hook that lazy-loads zod-mermaid and mermaid from CDN using pinned versions from cdn.ts (cached after first load), debounces diagram generation (500ms), prevents stale renders via generation counter, and respects dark mode by re-initializing mermaid with theme:'dark' based on Mantine color scheme. Returns { svg, mermaidText, isLoading, error }. Error handling: CDN fetch timeout at 10s — on failure, return error 'Diagram unavailable — could not load visualization libraries.' Mermaid rendering timeout at 5s — on timeout, return error 'Diagram generation timed out for this schema.' All errors surfaced through the error return value for the component to render as Mantine Alert.",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-cdn-verify"],
+      "scopeZones": ["zone-viz-feature"],
+      "fileChanges": [
+        {
+          "path": "src/features/SchemaVisualization/useSchemaVisualization.ts",
+          "action": "create",
+          "description": "Custom React hook (~100 lines): CDN lazy-loading via cdn.ts constants, debounced diagram generation, stale render prevention, dark mode support, 10s CDN timeout, 5s render timeout, error state propagation",
+          "resourceId": "res-viz-hook"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "src/features/SchemaVisualization/**",
+          "impactDescription": "New file — depends on cdn.ts from step-cdn-verify",
           "dependencyKind": "static"
         }
       ],
@@ -356,7 +473,7 @@
       },
       "stopConditions": [
         {
-          "trigger": "CDN URL for zod-mermaid +esm returns 404 or fails to resolve",
+          "trigger": "CDN URL for zod-mermaid +esm returns 404 or fails to resolve at runtime",
           "action": "halt-and-escalate",
           "escalateTo": "human-operator",
           "maxRetries": 1,
@@ -364,7 +481,7 @@
         }
       ],
       "resourceRequirements": {
-        "simultaneousResources": ["res-zod-ts", "res-value-editor"],
+        "simultaneousResources": ["res-cdn-constants", "res-zod-ts", "res-value-editor"],
         "sequentialResources": ["res-copy-button"]
       },
       "commitTemplate": "feat(viz): add useSchemaVisualization hook with CDN lazy-loading",
@@ -374,18 +491,67 @@
       }
     },
     {
-      "id": "step-component",
-      "title": "Create SchemaVisualization component and CSS",
-      "description": "Build the SchemaVisualization React component (~120 lines) with SegmentedControl for diagram type selection (ER default | Class | Flowchart), CopyButton for Mermaid text, 'Requires Zod 4+' alert for isZod4=false, and SVG container with overflow scroll. Create companion CSS module following ValueEditor patterns.",
+      "id": "step-unit-tests",
+      "title": "Add unit tests for useSchemaVisualization hook",
+      "description": "Create unit tests for the useSchemaVisualization hook covering: CDN module loading with mocked imports, debounce behavior (multiple rapid schema changes produce single render), stale render prevention (verify outdated renders are discarded), error state propagation (CDN failure returns error, render failure returns error), timeout behavior (10s CDN timeout, 5s render timeout).",
       "size": "S",
       "assignedTo": "ai-agent",
       "dependsOn": ["step-hook"],
+      "scopeZones": ["zone-unit-tests"],
+      "fileChanges": [
+        {
+          "path": "tests/schemaVisualization.unit.ts",
+          "action": "create",
+          "description": "Unit tests (~80 lines): CDN loading mock, debounce, stale render prevention, error states, timeout behavior",
+          "resourceId": "res-unit-test-viz"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "tests/**",
+          "impactDescription": "New test file — no existing tests affected",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "Unit tests pass",
+          "command": "npx node --test tests/schemaVisualization.unit.ts",
+          "passCriteria": "All unit tests pass",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Lint check",
+          "command": "npm run biome:check",
+          "passCriteria": "Zero lint errors",
+          "blocking": true,
+          "verifiedBy": "automated"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git rm tests/schemaVisualization.unit.ts"
+      },
+      "commitTemplate": "test(viz): add unit tests for useSchemaVisualization hook",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-component",
+      "title": "Create SchemaVisualization component and CSS",
+      "description": "Build the SchemaVisualization React component (~140 lines) with: SegmentedControl for diagram type selection (ER default | Class | Flowchart); CopyButton for Mermaid text; 'Requires Zod 4+' Alert (color='orange') when isZod4=false; SVG container with overflow scroll, role='img', and aria-label describing diagram type (e.g., 'ER diagram of schema'); aria-live='polite' region for loading/error state announcements; error Alert (color='red') rendering hook error states ('Diagram unavailable' for CDN failures, 'Diagram generation timed out' for render timeouts); for non-object primitive schemas, info Alert (variant='light', color='blue'): 'Schema visualization works best with object schemas. Your current schema is a [type] type.' — tab remains enabled, rendering still attempted since arrays of objects may produce useful diagrams. Create companion CSS module following ValueEditor patterns.",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-unit-tests"],
       "scopeZones": ["zone-viz-feature"],
       "fileChanges": [
         {
           "path": "src/features/SchemaVisualization/SchemaVisualization.tsx",
           "action": "create",
-          "description": "React component (~120 lines): SegmentedControl for diagram types, CopyButton, Zod 4+ alert, SVG container",
+          "description": "React component (~140 lines): SegmentedControl, CopyButton, Zod 4+ alert, SVG container with role='img' + aria-label, aria-live announcements, error/loading states, primitive schema info message",
           "resourceId": "res-viz-component"
         },
         {
@@ -430,7 +596,7 @@
         ],
         "sequentialResources": []
       },
-      "commitTemplate": "feat(viz): add SchemaVisualization component with diagram type switcher",
+      "commitTemplate": "feat(viz): add SchemaVisualization component with a11y and error states",
       "validationBudget": {
         "valReq": 2,
         "valDone": 0
@@ -556,7 +722,7 @@
     {
       "id": "step-e2e",
       "title": "Add E2E tests for schema visualization",
-      "description": "Create Playwright E2E tests (~60 lines) covering: Diagram tab visible and click renders SVG, diagram type switching changes output, Zod 3.x shows 'Requires Zod 4+' message, Values tab still works after viewing diagram (regression test).",
+      "description": "Create Playwright E2E tests (~80 lines) covering: Diagram tab visible and click renders SVG, diagram type switching changes output, Zod 3.x shows 'Requires Zod 4+' message, Values tab still works after viewing diagram (regression test), dark mode theme switching renders diagram with dark theme, error state displays when CDN/render fails (mocked or network-conditioned).",
       "size": "S",
       "assignedTo": "ai-agent",
       "dependsOn": ["step-css"],
@@ -565,7 +731,7 @@
         {
           "path": "tests/schemaVisualization.e2e.ts",
           "action": "create",
-          "description": "Playwright E2E tests (~60 lines): diagram tab renders SVG, type switching, Zod 3 disabled, Values tab regression",
+          "description": "Playwright E2E tests (~80 lines): diagram tab renders SVG, type switching, Zod 3 disabled, Values tab regression, dark mode rendering, error state display",
           "resourceId": "res-e2e-test"
         }
       ],
@@ -609,7 +775,9 @@
   ],
   "executionOrder": {
     "sequence": [
+      "step-cdn-verify",
       "step-hook",
+      "step-unit-tests",
       "step-component",
       "step-integration",
       "step-css",
@@ -623,8 +791,8 @@
       "description": "jsDelivr +esm transform may fail for zod-mermaid due to deep imports or CommonJS internals that don't transpile cleanly to ESM",
       "severity": "medium",
       "likelihood": "possible",
-      "affectedSteps": ["step-hook"],
-      "mitigation": "Test CDN URL manually before coding. Verify import resolves in browser devtools.",
+      "affectedSteps": ["step-cdn-verify", "step-hook"],
+      "mitigation": "step-cdn-verify validates CDN URL resolution before implementation. Pinned versions in cdn.ts prevent silent breakage from upstream releases. Verify import resolves in browser devtools.",
       "fallback": "Fall back to esm.sh CDN or bundle zod-mermaid as a last resort",
       "ownerId": "ai-agent",
       "relatedConstraint": "other"
@@ -634,8 +802,8 @@
       "description": "Cross-Zod-version duck typing may break if zod-mermaid uses instanceof checks instead of property-based checks against CDN-loaded Zod schemas",
       "severity": "low",
       "likelihood": "unlikely",
-      "affectedSteps": ["step-hook", "step-component"],
-      "mitigation": "zod-mermaid uses .def.type property checks which are stable across Zod 4.x instances",
+      "affectedSteps": ["step-cdn-verify", "step-hook", "step-component"],
+      "mitigation": "step-cdn-verify examines zod-mermaid source to confirm property-based introspection (.def.type). If instanceof checks are found, halt and escalate per stop condition.",
       "ownerId": "ai-agent",
       "relatedConstraint": "other"
     },
@@ -645,17 +813,17 @@
       "severity": "low",
       "likelihood": "unlikely",
       "affectedSteps": ["step-hook", "step-component"],
-      "mitigation": "Pass theme:'dark' to mermaid.initialize() based on Mantine useComputedColorScheme; re-render on scheme change",
+      "mitigation": "Pass theme:'dark' to mermaid.initialize() based on Mantine useComputedColorScheme; re-render on scheme change. E2E tests include dark mode rendering verification.",
       "ownerId": "ai-agent",
       "relatedConstraint": "other"
     },
     {
       "id": "risk-large-schema",
-      "description": "Large schemas may produce unreadable diagrams that overflow the visible area",
+      "description": "Large schemas may produce unreadable diagrams that overflow the visible area, or mermaid.render() may hang on complex input",
       "severity": "low",
       "likelihood": "possible",
       "affectedSteps": ["step-component"],
-      "mitigation": "SVG container with overflow:auto scroll. Future enhancement: add zoom/pan controls.",
+      "mitigation": "SVG container with overflow:auto scroll. Mermaid rendering timeout at 5s — abort and show error if exceeded. Future enhancement: add zoom/pan controls.",
       "ownerId": "ai-agent",
       "relatedConstraint": "other"
     },
@@ -665,7 +833,7 @@
       "severity": "low",
       "likelihood": "possible",
       "affectedSteps": ["step-component"],
-      "mitigation": "Show informational message for non-object schemas explaining that diagrams work best with object/record schemas",
+      "mitigation": "For non-object schemas, display Mantine Alert (variant='light', color='blue'): 'Schema visualization works best with object schemas. Your current schema is a [type] type.' Diagram tab remains enabled — rendering still attempted since arrays of objects may produce useful diagrams.",
       "ownerId": "ai-agent",
       "relatedConstraint": "other"
     }
@@ -675,8 +843,8 @@
       "id": "dec-cdn-import",
       "timestamp": "2026-02-17T19:00:00-03:00",
       "decidedBy": "human-operator",
-      "title": "Load zod-mermaid and mermaid from CDN at runtime",
-      "chosen": "CDN dynamic import via jsDelivr — both zod-mermaid and mermaid loaded at runtime, not bundled. This avoids cross-instance Zod instanceof failures and keeps the app bundle unchanged (~2MB mermaid stays out of bundle).",
+      "title": "Load zod-mermaid and mermaid from CDN at runtime with pinned versions",
+      "chosen": "CDN dynamic import via jsDelivr — both zod-mermaid and mermaid loaded at runtime with pinned semver versions (determined by step-cdn-verify), not bundled. This avoids cross-instance Zod instanceof failures and keeps the app bundle unchanged (~2MB mermaid stays out of bundle). Version pinning prevents silent breakage from upstream CDN releases.",
       "alternatives": [
         {
           "option": "Bundle zod-mermaid and mermaid as npm dependencies",
@@ -685,10 +853,14 @@
         {
           "option": "Bundle zod-mermaid only, load mermaid from CDN",
           "rejectionReason": "Still has the cross-instance Zod problem for zod-mermaid's internal zod import."
+        },
+        {
+          "option": "Use unpinned @latest CDN URLs",
+          "rejectionReason": "App can break without code changes when upstream releases incompatible versions. Violates reproducibility principle."
         }
       ],
       "reversible": true,
-      "affectedSteps": ["step-hook", "step-component", "step-integration"]
+      "affectedSteps": ["step-cdn-verify", "step-hook", "step-component", "step-integration"]
     },
     {
       "id": "dec-tab-ux",
@@ -708,6 +880,21 @@
       ],
       "reversible": true,
       "affectedSteps": ["step-integration", "step-css"]
+    },
+    {
+      "id": "dec-reversibility-scope",
+      "timestamp": "2026-02-17T20:00:00-03:00",
+      "decidedBy": "human-operator",
+      "title": "Reversibility claims apply to code-level changes only",
+      "chosen": "All plan steps are code-level reversible via git operations (git rm for created files, git checkout for modified files). Post-deployment feature removal — shared playground URLs referencing diagram state, user expectations, reputational considerations — requires separate release management not covered by this implementation plan. Feature flags and gradual rollout are not planned.",
+      "alternatives": [
+        {
+          "option": "Add feature flags for gradual rollout",
+          "rejectionReason": "Over-engineering for a playground app with no persistent state or user accounts. The feature can be cleanly removed via code revert at the implementation level."
+        }
+      ],
+      "reversible": true,
+      "affectedSteps": []
     }
   ],
   "dataSyncRules": {
@@ -748,6 +935,16 @@
       "description": "No lint errors introduced by new or modified files",
       "verificationCommand": "npm run biome:check",
       "passCriteria": "Exit code 0 with zero reported errors"
+    },
+    {
+      "description": "Diagram SVG container has role='img' and aria-label; loading and error states use aria-live='polite' for screen reader announcements",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "E2E test verifies aria attributes on SVG container and live region"
+    },
+    {
+      "description": "CDN library versions are pinned to exact semver in cdn.ts — no @latest or unpinned CDN URLs",
+      "verificationCommand": "npm run build",
+      "passCriteria": "cdn.ts exports pinned version constants; no dynamic @latest references in source"
     }
   ],
   "mergeStrategy": {
@@ -774,6 +971,12 @@
       "description": "Show visual diff between two schema versions by comparing their Mermaid diagram outputs. Depends on version history or multi-schema support.",
       "dependsOnDecisions": [],
       "targetPhase": "future"
+    },
+    {
+      "title": "Performance benchmarking for complex schemas",
+      "description": "Profile mermaid rendering times across schema complexity levels to establish empirical thresholds for size warnings. Deferred from FBI-05 as it requires implementation-time profiling data.",
+      "dependsOnDecisions": [],
+      "targetPhase": "post-v1"
     }
   ]
 }

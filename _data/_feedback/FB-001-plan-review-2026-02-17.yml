@@ -1,0 +1,439 @@
+feedback:
+  id: FB-001
+  title: "Technical Review — Schema Visualization Plan structural assessment"
+  date: "2026-02-17"
+
+  provenance:
+    source_id: human-operator
+    source_authority: operator
+    received: "2026-02-17"
+    channel: human_conversation
+    projection_included:
+      - "_data/plans/plan.schema-visualization.2026-02-17T19:00:00-03:00.json (v1.0.0)"
+      - "_data/plans/draft/sorted-hopping-quilt.md"
+      - "_specs/schemas/plan-schema.ts"
+    projection_excluded:
+      - "zod-mermaid source code (not examined by reviewer)"
+      - "mermaid library internals"
+      - "jsDelivr CDN +esm transformation logic"
+      - "Playwright test fixtures implementation details"
+    artifact_ref: "technical-review-schema-visualization-2026-02-17"
+
+  items:
+    - id: FBI-01
+      claim: >
+        The assertion that zod-mermaid uses .def.type property checks
+        lacks verification. The plan should examine zod-mermaid source
+        code and test CDN URL before building on this assumption.
+      targets:
+        - entity_type: risk
+          entity_ref: risk-cross-zod
+          aspect: mitigation
+        - entity_type: step
+          entity_ref: step-hook
+          aspect: assumptions
+      disposition: accepted
+      rationale: >
+        The claim is correct. The plan's risk-cross-zod mitigation
+        states "zod-mermaid uses .def.type property checks which are
+        stable across Zod 4.x instances" without citing evidence from
+        the library's source code. This is an unverified assumption
+        that the entire CDN architecture depends on. A pre-verification
+        step that confirms the CDN URL resolves and the library's
+        approach to schema introspection is warranted.
+      actions_taken:
+        - type: step_added
+          ref: step-cdn-verify
+          description: >
+            Added step-cdn-verify (XS) before step-hook: verify CDN URL
+            resolves for both zod-mermaid and mermaid, examine
+            zod-mermaid source for schema introspection approach,
+            pin tested versions in cdn.ts constants file.
+      false_negative_channel: specification
+
+    - id: FBI-02
+      claim: >
+        CDN loading has no graceful degradation if unreachable, no
+        timeout handling, no retry logic, no offline consideration.
+        The plan should specify error UX, retry with exponential
+        backoff, and service worker caching.
+      targets:
+        - entity_type: step
+          entity_ref: step-hook
+          aspect: error_handling
+        - entity_type: risk
+          entity_ref: risk-cdn-esm
+          aspect: mitigation
+      disposition: partially_accepted
+      rationale: >
+        The claim that error handling is unspecified is partially
+        correct. The hook already returns { svg, mermaidText,
+        isLoading, error } — the error state exists but the plan
+        doesn't specify what the component does with it. The stop
+        condition on step-hook already handles CDN 404. However,
+        the specific error UX (what the user sees), network timeout,
+        and loading state are underspecified.
+      accepted_portion: >
+        Error UX specification is missing: what does the user see
+        when CDN fails or mermaid rendering fails? The step-hook
+        description should specify the error component rendering
+        and network timeout handling.
+      refuted_portion: >
+        Service worker caching and exponential backoff are
+        disproportionate to scope. Zod itself loads from the same
+        CDN — if jsDelivr is unreachable, the playground has no
+        schemas to visualize. The offline scenario is already
+        non-functional at the Zod loading layer. Adding retry
+        infrastructure for a secondary feature when the primary
+        feature has the same CDN dependency is over-engineering.
+      actions_taken:
+        - type: step_updated
+          ref: step-hook
+          description: >
+            Enhanced step-hook description to specify error UX:
+            Mantine Alert (color='red') "Diagram unavailable" when
+            CDN fails. Network timeout: 10s for CDN fetches.
+            Mermaid rendering timeout: 5s.
+        - type: step_updated
+          ref: step-component
+          description: >
+            Enhanced step-component to render error states from
+            hook: Alert with error details, aria-live announcements.
+      false_negative_channel: specification
+
+    - id: FBI-03
+      claim: >
+        Test coverage has gaps: no unit tests for hook logic, no
+        error boundary testing, no dark mode verification, no
+        copy-to-clipboard testing, no performance testing for
+        deeply nested schemas.
+      targets:
+        - entity_type: step
+          entity_ref: step-e2e
+          aspect: coverage
+      disposition: partially_accepted
+      rationale: >
+        The claim that unit tests for the hook are missing is
+        correct — the plan only specifies E2E tests. Hook logic
+        (debouncing, stale render prevention, CDN caching) should
+        be unit-testable in isolation. Error boundary testing and
+        dark mode switching should be in E2E tests.
+      accepted_portion: >
+        Unit tests for useSchemaVisualization hook are warranted:
+        CDN loading mock, debounce behavior, stale render
+        prevention, error state propagation. E2E tests should
+        include dark mode theme switching and error boundary
+        scenarios.
+      refuted_portion: >
+        Performance testing for deeply nested schemas requires
+        empirical thresholds established during implementation,
+        not plan-time specification. Copy-to-clipboard testing
+        is covered by the existing CopyButton component's own
+        tests — the plan reuses that component without modification.
+      actions_taken:
+        - type: step_added
+          ref: step-unit-tests
+          description: >
+            Added step-unit-tests (S) after step-hook: unit tests
+            for useSchemaVisualization covering CDN loading mock,
+            debounce, stale render, error states.
+        - type: step_updated
+          ref: step-e2e
+          description: >
+            Expanded step-e2e scope to include dark mode rendering
+            and error state E2E tests.
+      false_negative_channel: specification
+
+    - id: FBI-04
+      claim: >
+        Accessibility is entirely omitted: no ARIA labels, no
+        keyboard navigation, no screen reader support, no color
+        contrast verification.
+      targets:
+        - entity_type: step
+          entity_ref: step-component
+          aspect: accessibility
+      disposition: accepted
+      rationale: >
+        Correct. The plan has zero accessibility considerations.
+        The SVG diagram needs aria-label, the SegmentedControl
+        is Mantine (built-in a11y) but the diagram container
+        needs role="img" and descriptive alt text. Screen reader
+        announcements for loading/error states should use
+        aria-live regions. Color contrast in dark mode diagrams
+        is a legitimate concern since mermaid theme colors may
+        not meet WCAG AA.
+      actions_taken:
+        - type: step_updated
+          ref: step-component
+          description: >
+            Enhanced step-component description to include:
+            role="img" + aria-label on SVG container, aria-live
+            region for loading/error announcements.
+        - type: acceptance_criteria_added
+          description: >
+            Added acceptance criterion: diagram SVG container has
+            role="img" and aria-label; loading/error states use
+            aria-live="polite".
+      false_negative_channel: specification
+
+    - id: FBI-05
+      claim: >
+        Performance considerations are vague. Missing rendering
+        timeout, schema size threshold, memory cleanup when
+        switching tabs.
+      targets:
+        - entity_type: step
+          entity_ref: step-hook
+          aspect: performance
+        - entity_type: risk
+          entity_ref: risk-large-schema
+          aspect: mitigation
+      disposition: partially_accepted
+      rationale: >
+        The debounce (500ms) is already specified in the plan.
+        A mermaid rendering timeout is warranted — mermaid.render()
+        can hang on pathological input. Memory cleanup when
+        switching tabs is handled by React's component lifecycle
+        (unmount cleans up) and doesn't need explicit plan mention.
+      accepted_portion: >
+        Mermaid rendering timeout should be specified. If
+        mermaid.render() doesn't resolve within a reasonable
+        window, the hook should abort and show an error.
+      refuted_portion: >
+        Schema size threshold requires empirical benchmarking,
+        not plan-time specification. Memory cleanup is handled
+        by React component lifecycle — specifying it in the plan
+        adds no value. Tab switching unmounts the component,
+        which clears the SVG and hook state automatically.
+      actions_taken:
+        - type: step_updated
+          ref: step-hook
+          description: >
+            Added mermaid rendering timeout (5s) to step-hook
+            description. If render exceeds timeout, abort and
+            show "Diagram generation timed out" error.
+      false_negative_channel: specification
+
+    - id: FBI-06
+      claim: >
+        Primitive schema handling UX is vague. "Show informational
+        message" doesn't specify content, placement, or behavior.
+      targets:
+        - entity_type: step
+          entity_ref: step-component
+          aspect: ux_specification
+        - entity_type: risk
+          entity_ref: risk-primitive-schema
+          aspect: mitigation
+      disposition: accepted
+      rationale: >
+        Correct. The risk mitigation says "Show informational
+        message for non-object schemas" but doesn't specify what
+        the message says, where it appears, or whether the tab
+        is still enabled. This is a UX specification gap that
+        should be resolved at plan time, not implementation time.
+      actions_taken:
+        - type: step_updated
+          ref: step-component
+          description: >
+            Specified primitive schema UX in step-component:
+            Diagram tab remains enabled. For non-object schemas,
+            display Mantine Alert (variant='light', color='blue'):
+            "Schema visualization works best with object schemas.
+            Your current schema is a [type] type." Still attempt
+            rendering — arrays of objects may produce useful
+            diagrams.
+        - type: risk_updated
+          ref: risk-primitive-schema
+          description: >
+            Updated mitigation with specific UX: info Alert in
+            diagram panel, tab remains enabled, rendering still
+            attempted.
+      false_negative_channel: specification
+
+    - id: FBI-07
+      claim: >
+        CDN version pinning is missing. Using @latest means the
+        app can break without code changes. Exact versions of
+        zod-mermaid and mermaid must be pinned.
+      targets:
+        - entity_type: step
+          entity_ref: step-hook
+          aspect: dependency_management
+        - entity_type: decision
+          entity_ref: dec-cdn-import
+          aspect: version_strategy
+      disposition: accepted
+      rationale: >
+        This is a critical omission. The existing CDN pattern
+        in src/zod.ts pins Zod to specific versions via the
+        VersionPicker — the user selects an exact version. The
+        zod-mermaid and mermaid CDN loads must similarly pin
+        exact versions. Using unpinned @latest would violate
+        the reproducibility principle and create a maintenance
+        landmine.
+      actions_taken:
+        - type: step_added
+          ref: step-cdn-verify
+          description: >
+            step-cdn-verify outputs cdn.ts with pinned version
+            constants (ZOD_MERMAID_VERSION, MERMAID_VERSION)
+            determined by compatibility testing during the step.
+        - type: decision_updated
+          ref: dec-cdn-import
+          description: >
+            Added version pinning note to CDN import decision:
+            both libraries pinned to exact versions, determined
+            by step-cdn-verify compatibility testing.
+      false_negative_channel: specification
+
+    - id: FBI-08
+      claim: >
+        All steps show valDone:0 — this plan hasn't been
+        validated yet. Baseline metrics are aspirational, not
+        measured. Should run baseline health commands and update
+        valDone counters before execution.
+      targets:
+        - entity_type: step
+          entity_ref: "*"
+          aspect: validationBudget
+        - entity_type: baseline
+          entity_ref: baseline
+          aspect: metrics
+      disposition: refuted
+      rationale: >
+        The claim confuses plan authoring with plan execution.
+        The validationBudget field tracks constraint debt during
+        execution (Def 4.2): valReq is the number of verification
+        checks required for the step, valDone is the number
+        completed. At plan creation time, valDone is always 0
+        because no step has been executed yet. This is not a
+        deficiency — it is the correct initial state.
+
+        The baseline healthCommands ("npm run build", "npm run
+        test:e2e", "npm run biome:check") are prescriptive, not
+        descriptive. They define the commands to run to establish
+        the baseline. Running them and recording output is an
+        execution concern, not a plan authoring concern.
+
+        The valDone counters increment as steps are executed
+        and their verification checks pass. The well-formedness
+        validator's constraint debt check (condition 10) correctly
+        reports this as a warning, not an error — debt exists
+        but is expected for unexecuted plans.
+      objections:
+        - >
+          valDone:0 is the correct initial state for an
+          unexecuted plan. The validation budget tracks execution
+          progress per Def 4.2: D(t) = Σ[val_req - val_done]^+.
+          Requiring valDone > 0 before execution begins would
+          mean the plan must be partially executed before it can
+          be considered valid — a circular requirement.
+        - >
+          Baseline metrics are prescriptive thresholds, not
+          recorded measurements. The baseline.healthCommands
+          field exists precisely to define how to establish the
+          baseline at execution start. Recording their output
+          in the plan would couple the plan to a specific point
+          in time, making it stale immediately.
+
+    - id: FBI-09
+      claim: >
+        Missing references to zod-mermaid documentation, no
+        verification that ER diagrams are "more complete" for
+        this library, no source code evidence for CDN import
+        decision.
+      targets:
+        - entity_type: decision
+          entity_ref: dec-cdn-import
+          aspect: evidence
+      disposition: partially_accepted
+      rationale: >
+        The claim that references would strengthen the plan is
+        valid. However, the PlanSchema (v0.3.0) does not have
+        a references field — adding one would require a schema
+        change. The plan's notes fields on steps and decisions
+        can carry reference URLs.
+
+        The claim about ER diagram completeness is moot — the
+        draft plan explicitly states ER is the default with
+        class and flowchart as alternatives. The user can switch.
+
+        The CDN import decision rationale is architectural
+        (cross-instance instanceof) not evidence-based — the
+        evidence will be gathered in step-cdn-verify.
+      accepted_portion: >
+        Reference URLs for zod-mermaid and mermaid CDN should
+        be documented in step notes or decision notes for
+        traceability.
+      refuted_portion: >
+        The PlanSchema v0.3.0 has no references field. Adding
+        one requires a schema-level change that is out of scope
+        for this plan revision. The ER "completeness" claim is
+        a misread — the plan offers three diagram types with ER
+        as default, not as the only option.
+      actions_taken:
+        - type: step_updated
+          ref: step-cdn-verify
+          description: >
+            Added notes to step-cdn-verify with reference URLs
+            for zod-mermaid and mermaid packages.
+      false_negative_channel: specification
+
+    - id: FBI-10
+      claim: >
+        Reversibility claims ignore shared URLs breaking,
+        reputational cost of feature removal, and deployment
+        considerations. Should clarify reversibility scope.
+      targets:
+        - entity_type: step
+          entity_ref: "*"
+          aspect: reversibility
+      disposition: partially_accepted
+      rationale: >
+        The reversibility field in the plan schema addresses
+        code-level reversibility — can this change be undone
+        via git operations? All steps are correctly marked
+        reversible with git rm/checkout rollback procedures.
+
+        The reviewer's concerns about shared URLs and
+        reputational cost are deployment/release concerns that
+        apply after the feature is shipped and adopted, not
+        during implementation. This plan covers implementation,
+        not release management.
+
+        However, noting the scope of reversibility is fair —
+        the plan should acknowledge that post-deployment
+        reversibility has additional considerations.
+      accepted_portion: >
+        Adding a note clarifying that reversibility claims apply
+        to code-level changes during implementation, not
+        post-deployment feature removal.
+      refuted_portion: >
+        Shared URL breakage and reputational cost are release
+        management concerns, not implementation plan concerns.
+        This plan does not include a deployment step. Feature
+        flags are explicitly out of scope per the non-scope
+        rationale. The plan schema's reversibility field (Ax 2.3)
+        models code-level rollback procedures, which are
+        correctly specified.
+      actions_taken:
+        - type: decision_added
+          ref: dec-reversibility-scope
+          description: >
+            Added decision dec-reversibility-scope clarifying
+            that all reversibility claims are code-level. Post-
+            deployment feature removal requires separate release
+            management not covered by this plan.
+      false_negative_channel: specification
+
+  processed_by: ai-agent
+  processing_status: processed
+  verification_cost: high
+  framework_version_at_processing: "2.3.0"
+
+  triggered_transitions:
+    - "plan.schema-visualization v1.0.0 → v1.1.0"
+
+  triggered_tensions: []
