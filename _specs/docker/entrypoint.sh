@@ -22,7 +22,7 @@ case "$cmd" in
     exec npm run docs:serve
     ;;
   smoke)
-    exec bash docs/_specs/scripts/docker-docs-smoke.sh
+    exec bash _specs/scripts/docker-docs-smoke.sh
     ;;
   *)
     exec "$@"

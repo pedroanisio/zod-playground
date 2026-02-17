@@ -1,0 +1,234 @@
+{
+  "schemaVersion": "0.1.0",
+  "identity": {
+    "modelId": "mm-zod-playground-2026-02-17",
+    "createdAt": "2026-02-17T15:44:36-03:00",
+    "authorId": "codex-gpt5",
+    "taskDescription": "create or update a mental model for this codebase, following the mental model protocol",
+    "sourcesConsulted": [
+      {
+        "path": "_specs/prompts/mental-model.md",
+        "description": "Prompt that requested creating/updating the mental model",
+        "trustLevel": "user-provided"
+      },
+      {
+        "path": "_specs/ai-agents/mental-model-protocol.md",
+        "description": "Protocol defining required process and output path",
+        "trustLevel": "reference"
+      },
+      {
+        "path": "_specs/schemas/mental-model-schema.ts",
+        "description": "Canonical schema and readiness rules for the artifact",
+        "trustLevel": "reference"
+      },
+      {
+        "path": "src/App.tsx",
+        "description": "Primary application composition and runtime flow",
+        "trustLevel": "codebase"
+      },
+      {
+        "path": "src/zod.ts",
+        "description": "Schema/value evaluation and dynamic Zod version loading",
+        "trustLevel": "codebase"
+      },
+      {
+        "path": "src/utils/appData.ts",
+        "description": "URL/localStorage app data parsing and sharing",
+        "trustLevel": "codebase"
+      },
+      {
+        "path": "tests/app.e2e.ts",
+        "description": "End-to-end behavioral coverage for playground flows",
+        "trustLevel": "codebase"
+      },
+      {
+        "path": "package.json",
+        "description": "Scripts, test strategy, and dependency/tooling baseline",
+        "trustLevel": "codebase"
+      },
+      {
+        "path": "PURPOSE.md",
+        "description": "Project intent and mission statement",
+        "trustLevel": "codebase"
+      }
+    ]
+  },
+  "baseline": {
+    "snapshot": "170c791",
+    "metrics": [
+      {
+        "name": "repository_files_total",
+        "value": 136,
+        "unit": "files",
+        "measuredBy": "rg --files | wc -l"
+      },
+      {
+        "name": "src_ts_tsx_files",
+        "value": 16,
+        "unit": "files",
+        "measuredBy": "bash _specs/scripts/treemeta.sh -g -l -e ts,tsx --limit 100 ./src"
+      },
+      {
+        "name": "src_tree_count",
+        "value": 22,
+        "unit": "entries",
+        "measuredBy": "bash _specs/scripts/treemeta.sh -g --count ./src"
+      },
+      {
+        "name": "tests_file_count",
+        "value": 4,
+        "unit": "files",
+        "measuredBy": "rg --files tests | wc -l"
+      },
+      {
+        "name": "npm_test_coverage_command_exit_code",
+        "value": 1,
+        "unit": "exit-code",
+        "measuredBy": "npm test -- --coverage 2>&1 | tail -10"
+      }
+    ],
+    "summary": "The codebase is a Vite + React + TypeScript Zod playground with a Monaco-based schema/value editing UX, runtime Zod version switching via jsDelivr, URL/localStorage state sharing, and unit/perf/e2e tests. A PURPOSE document exists at repository root. The shared mental model artifact at _data/_shared/mental-model.json did not exist before this run.",
+    "existingCapabilities": [
+      "Interactive schema and value editing with realtime validation output",
+      "Dynamic Zod version selection including zod/mini support where available",
+      "Shareable URL-encoded playground state and local persistence",
+      "Automated unit and performance tests for schema return-inference logic",
+      "Playwright e2e coverage for key user flows and cross-version behavior",
+      "CI workflows for lint/build/test and Vercel preview/production deployment"
+    ],
+    "knownIssues": [
+      "npm test -- --coverage currently exits non-zero in this workspace because Playwright webServer startup fails",
+      "User-entered schema/value execution relies on dynamic function evaluation, requiring careful trust boundaries"
+    ]
+  },
+  "targetState": {
+    "definition": "A current, reviewable mental model JSON exists at _data/_shared/mental-model.json and is ready to serve as input for subsequent plan generation.",
+    "successCriteria": [
+      "Mental model artifact is present at _data/_shared/mental-model.json",
+      "Artifact follows the MentalModelSchema shape and required section coverage",
+      "Baseline captures concrete codebase metrics, capabilities, and known issues",
+      "Entity inventory explicitly separates verified entities from confirmed-absent items",
+      "Model contains no open questions or open decisions for this artifact-creation scope"
+    ],
+    "derivation": "user-explicit"
+  },
+  "delta": {
+    "summary": "Baseline lacked a shared mental model artifact; delta is to synthesize the current repository understanding into the protocol-defined JSON checkpoint at _data/_shared/mental-model.json.",
+    "workStreams": [
+      {
+        "id": "WS-MM-BASELINE",
+        "title": "Capture baseline and intent",
+        "deliverable": "Repository baseline summary with measurable metrics, capabilities, and known issues",
+        "estimatedSize": "S",
+        "dependsOn": [],
+        "touchesAreas": [
+          "src/",
+          "tests/",
+          "package.json",
+          "PURPOSE.md",
+          "_specs/ai-agents/mental-model-protocol.md",
+          "_specs/schemas/mental-model-schema.ts"
+        ],
+        "rationale": "A valid mental model requires evidence-backed baseline and explicit target derivation before any planning"
+      },
+      {
+        "id": "WS-MM-ARTIFACT",
+        "title": "Persist shared mental model artifact",
+        "deliverable": "Structured mental model JSON saved to _data/_shared/mental-model.json",
+        "estimatedSize": "XS",
+        "dependsOn": [
+          "WS-MM-BASELINE"
+        ],
+        "touchesAreas": [
+          "_data/_shared/mental-model.json"
+        ],
+        "rationale": "This artifact is the required checkpoint consumed by create-plan workflows"
+      }
+    ],
+    "excludedFromScope": [
+      {
+        "item": "Generating a formal PlanSchema",
+        "reason": "Mental model protocol requires explicit checkpointing before plan generation"
+      },
+      {
+        "item": "Implementing runtime/security/reliability fixes",
+        "reason": "Task scope is model creation/update, not codebase modification"
+      }
+    ]
+  },
+  "entities": {
+    "verified": [
+      {
+        "name": "App shell",
+        "kind": "module",
+        "verifiedFrom": "src/App.tsx"
+      },
+      {
+        "name": "Zod runtime evaluator",
+        "kind": "module",
+        "verifiedFrom": "src/zod.ts"
+      },
+      {
+        "name": "App data parser and share-link utility",
+        "kind": "module",
+        "verifiedFrom": "src/utils/appData.ts"
+      },
+      {
+        "name": "Persistence hook",
+        "kind": "module",
+        "verifiedFrom": "src/hooks/usePersistAppData.ts"
+      },
+      {
+        "name": "End-to-end test suite",
+        "kind": "test-suite",
+        "verifiedFrom": "tests/app.e2e.ts"
+      },
+      {
+        "name": "Project scripts and CI entrypoints",
+        "kind": "configuration",
+        "verifiedFrom": "package.json"
+      }
+    ],
+    "unverified": [],
+    "confirmedAbsent": []
+  },
+  "assumptions": [
+    {
+      "id": "A-MM-1",
+      "statement": "The requested operation is limited to creating/updating the mental-model checkpoint artifact and does not require immediate plan generation.",
+      "ifWrong": "If a plan was expected immediately, additional planning work would be missing from this deliverable.",
+      "confidence": "high",
+      "verificationHint": "Confirm whether next step should execute _specs/prompts/create-plan.md"
+    },
+    {
+      "id": "A-MM-2",
+      "statement": "Structural schema validation with validateMentalModel() may require unavailable local dependencies in this workspace state.",
+      "ifWrong": "If dependencies are actually available, we should run strict validator execution and store readiness output.",
+      "confidence": "medium",
+      "verificationHint": "Run node with _specs/schemas/mental-model-schema.ts and validateMentalModel() after dependency install"
+    }
+  ],
+  "openQuestions": [],
+  "openDecisions": [],
+  "constraints": [
+    {
+      "id": "C-MM-1",
+      "description": "Artifact must remain at _data/_shared/mental-model.json",
+      "verificationCommand": "test -f _data/_shared/mental-model.json",
+      "kind": "invariant"
+    },
+    {
+      "id": "C-MM-2",
+      "description": "Mental model JSON must use schemaVersion 0.1.0",
+      "verificationCommand": "node -e \"const m=require('fs').readFileSync('_data/_shared/mental-model.json','utf8');console.log(JSON.parse(m).schemaVersion)\"",
+      "kind": "invariant"
+    },
+    {
+      "id": "C-MM-3",
+      "description": "Do not generate a PlanSchema within this step",
+      "kind": "milestone"
+    }
+  ],
+  "overallConfidence": "high",
+  "reviewNotes": "Model created from direct codebase inspection and protocol/schema references. validateMentalModel() execution is not included in this run because workspace dependencies are currently not installed."
+}

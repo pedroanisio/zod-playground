@@ -1,22 +1,22 @@
 services:
   docs-build:
     build:
-      context: ../../..
-      dockerfile: docs/_specs/docker/Dockerfile
-    image: principles-docs:local
+      context: ../..
+      dockerfile: _specs/docker/Dockerfile
+    image: principles-docs:local-specs
     working_dir: /workspace
     volumes:
-      - ../../..:/workspace
+      - ../..:/workspace
     command: build
 
   docs-serve:
     build:
-      context: ../../..
-      dockerfile: docs/_specs/docker/Dockerfile
-    image: principles-docs:local
+      context: ../..
+      dockerfile: _specs/docker/Dockerfile
+    image: principles-docs:local-specs
     working_dir: /workspace
     volumes:
-      - ../../..:/workspace
+      - ../..:/workspace
     command: serve
     ports:
-      - "8000:8000"
+      - "${DOCS_PORT:-8000}:8000"

@@ -90,11 +90,11 @@ function sourceToPath(value?: string): string | undefined {
   if (normalized.startsWith(rootNormalized)) {
     return normalized.slice(rootNormalized.length + 1);
   }
-  if (normalized.startsWith("docs/")) {
+  if (normalized.startsWith("_specs/")) {
     return normalized;
   }
   if (/^[^/]+\.ts$/.test(normalized)) {
-    return path.join("docs", "_specs", "schemas", normalized).replaceAll("\\", "/");
+    return path.join("_specs", "schemas", normalized).replaceAll("\\", "/");
   }
   return normalized;
 }
@@ -337,7 +337,7 @@ function toKind(line: string): string {
 }
 
 async function extractFromSourceFiles(): Promise<ExtractedModel> {
-  const schemaDir = path.join(repoRoot, "docs", "_specs", "schemas");
+  const schemaDir = path.join(repoRoot, "_specs", "schemas");
   const entries = await readdir(schemaDir, { withFileTypes: true });
   const files = entries
     .filter((entry) => entry.isFile() && entry.name.endsWith(".ts"))
@@ -371,7 +371,7 @@ async function extractFromSourceFiles(): Promise<ExtractedModel> {
         kind: toKind(line),
         summary: comment.summary,
         tags: comment.tags,
-        sourcePath: path.join("docs", "_specs", "schemas", fileName).replaceAll("\\", "/"),
+        sourcePath: path.join("_specs", "schemas", fileName).replaceAll("\\", "/"),
         line: index + 1,
       });
       nextId += 1;
@@ -381,7 +381,7 @@ async function extractFromSourceFiles(): Promise<ExtractedModel> {
       id: nextId,
       name: fileName.replace(/\.ts$/, ""),
       summary: extractModuleOverviewFromSource(content),
-      sourcePath: path.join("docs", "_specs", "schemas", fileName).replaceAll("\\", "/"),
+      sourcePath: path.join("_specs", "schemas", fileName).replaceAll("\\", "/"),
       symbols: symbols.sort((a, b) => a.name.localeCompare(b.name)),
     });
     nextId += 1;

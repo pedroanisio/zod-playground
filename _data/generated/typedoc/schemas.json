@@ -1,0 +1,3035 @@
+{
+  "schemaVersion": "1.0.0",
+  "modules": [
+    {
+      "id": 27,
+      "name": "adr",
+      "summary": "Unified module: Zod v4 validation + JSONL serialization. Merges grid-editor and iande-builder ADR contracts.",
+      "sourcePath": "_specs/schemas/adr.ts",
+      "symbols": [
+        {
+          "id": 1,
+          "name": "ADR_STATUSES",
+          "kind": "const",
+          "summary": "Canonical ADR lifecycle statuses as a const tuple.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Exported for iteration, mapping, and use in UI dropdowns.\nThe corresponding Zod schema is {@link ADRStatusSchema}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 25
+        },
+        {
+          "id": 6,
+          "name": "ADRDate",
+          "kind": "type",
+          "summary": "An ISO 8601 date string (`\"YYYY-MM-DD\"`).",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 72
+        },
+        {
+          "id": 3,
+          "name": "ADRDateSchema",
+          "kind": "const",
+          "summary": "Zod schema for ISO 8601 date strings (`YYYY-MM-DD`).",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Lexical string comparison is valid for this format, which is\nrelied upon by the {@link ADRRecordSchema} `updatedAt >= createdAt`\nrefinement."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 55
+        },
+        {
+          "id": 5,
+          "name": "ADRId",
+          "kind": "type",
+          "summary": "An ADR identifier string (e.g. `\"ADR-018\"`).",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 69
+        },
+        {
+          "id": 2,
+          "name": "ADRIdSchema",
+          "kind": "const",
+          "summary": "Zod schema for ADR identifiers.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Must match the pattern `ADR-###` (e.g. `ADR-018`)."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 41
+        },
+        {
+          "id": 22,
+          "name": "ADRInput",
+          "kind": "type",
+          "summary": "Union of all accepted input shapes for {@link parseADR}.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "| Type | Interpretation |\n|------|----------------|\n| `string` | JSON array (starts with `[`) or JSONL |\n| `unknown[]` | Pre-parsed array of records |\n| `Record<string, unknown>` | Single pre-parsed record |"
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 381
+        },
+        {
+          "id": 13,
+          "name": "ADRJsonl",
+          "kind": "type",
+          "summary": "The output type of {@link ADRJsonlSchema} (alias for {@link ADRRecords}).",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 225
+        },
+        {
+          "id": 12,
+          "name": "ADRJsonlSchema",
+          "kind": "const",
+          "summary": "Zod schema that transforms a raw JSONL string into {@link ADRRecords}.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Each non-empty line is parsed as JSON individually. Parse errors\ninclude 1-based line numbers for diagnostics. After JSON parsing,\nthe resulting array is validated through {@link ADRRecordsSchema}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 179
+        },
+        {
+          "id": 9,
+          "name": "ADRRecord",
+          "kind": "type",
+          "summary": "A validated ADR record.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 136
+        },
+        {
+          "id": 11,
+          "name": "ADRRecords",
+          "kind": "type",
+          "summary": "A validated array of ADR records with unique IDs.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 167
+        },
+        {
+          "id": 8,
+          "name": "ADRRecordSchema",
+          "kind": "const",
+          "summary": "Zod schema for a single ADR record.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Core fields are strictly validated. Unknown extension fields are\nallowed via `.catchall(z.unknown())` for forward compatibility.\nCross-field refinements:\n- `updatedAt` must be on or after `createdAt`.\n- `supersededBy` is **required** when `status` is `\"superseded\"`\nand **forbidden** otherwise."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 93
+        },
+        {
+          "id": 10,
+          "name": "ADRRecordsSchema",
+          "kind": "const",
+          "summary": "Zod schema for an array of ADR records.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Validates each element via {@link ADRRecordSchema} and additionally\nensures no duplicate `id` values exist within the collection."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 147
+        },
+        {
+          "id": 7,
+          "name": "ADRStatus",
+          "kind": "type",
+          "summary": "One of the canonical ADR lifecycle statuses.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 75
+        },
+        {
+          "id": 4,
+          "name": "ADRStatusSchema",
+          "kind": "const",
+          "summary": "Zod schema for the ADR status enum.",
+          "tags": [
+            {
+              "tag": "@see",
+              "text": "{@link ADR_STATUSES} for the underlying tuple."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 66
+        },
+        {
+          "id": 23,
+          "name": "parseADR",
+          "kind": "function",
+          "summary": "Detect input shape and parse accordingly.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Shape detection heuristic:\n- **`string`** — if the trimmed value starts with `[`, it is treated\nas a JSON array; otherwise as JSONL. A single-line JSON object is\nvalid JSONL and handled naturally.\n- **`Array`** — validated directly as {@link ADRRecords}.\n- **Plain object** — wrapped in a one-element array and validated\nas {@link ADRRecords}. The return value is always an array for\nuniform downstream handling."
+            },
+            {
+              "tag": "@param",
+              "text": "input - A string (JSON array or JSONL), a pre-parsed array,\nor a single pre-parsed record."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link ADRRecords} array."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If validation fails."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link SyntaxError} If a string input contains invalid JSON."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 405
+        },
+        {
+          "id": 18,
+          "name": "parseADRJsonArray",
+          "kind": "function",
+          "summary": "Parse and validate a JSON string containing an array of ADR records.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - A JSON string whose top-level value is an array."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link ADRRecords} array."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link SyntaxError} If `input` is not valid JSON."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If any record fails validation or IDs are duplicated."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 305
+        },
+        {
+          "id": 20,
+          "name": "parseADRJsonl",
+          "kind": "function",
+          "summary": "Parse and validate a JSONL string (one JSON object per line).",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - A JSONL-formatted string. Empty lines are skipped."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link ADRRecords} array."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If any line contains invalid JSON, any record\nfails validation, or IDs are duplicated."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 352
+        },
+        {
+          "id": 14,
+          "name": "parseADRRecord",
+          "kind": "function",
+          "summary": "Parse and validate a single ADR from a pre-parsed value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - An `unknown` value (typically the result of `JSON.parse`)."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link ADRRecord}."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If validation fails."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 236
+        },
+        {
+          "id": 16,
+          "name": "parseADRRecordString",
+          "kind": "function",
+          "summary": "Parse and validate a single ADR from a raw JSON string.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - A JSON string representing one ADR object."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link ADRRecord}."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link SyntaxError} If `input` is not valid JSON."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If validation fails."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 261
+        },
+        {
+          "id": 24,
+          "name": "safeParseADR",
+          "kind": "function",
+          "summary": "Safely detect input shape and parse accordingly.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "All failure modes (JSON syntax errors, Zod validation errors) are\nnormalised into a {@link z.ZodError} on the `error` branch so\ncallers only need to handle one error type."
+            },
+            {
+              "tag": "@param",
+              "text": "input - A string (JSON array or JSONL), a pre-parsed array,\nor a single pre-parsed record."
+            },
+            {
+              "tag": "@returns",
+              "text": "An object with `success: true` and `data: ADRRecords`, or\n`success: false` and `error: z.ZodError`."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 439
+        },
+        {
+          "id": 19,
+          "name": "safeParseADRJsonArray",
+          "kind": "function",
+          "summary": "Safely parse a JSON string containing an array of ADR records.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "JSON syntax errors are wrapped in a {@link z.ZodError} for a\nuniform return type."
+            },
+            {
+              "tag": "@param",
+              "text": "input - A JSON string whose top-level value is an array."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod `SafeParseReturnType` containing either the validated\n{@link ADRRecords} or a {@link z.ZodError}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 321
+        },
+        {
+          "id": 21,
+          "name": "safeParseADRJsonl",
+          "kind": "function",
+          "summary": "Safely parse a JSONL string.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - A JSONL-formatted string. Empty lines are skipped."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod `SafeParseReturnType` containing either the validated\n{@link ADRRecords} or a {@link z.ZodError}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 363
+        },
+        {
+          "id": 15,
+          "name": "safeParseADRRecord",
+          "kind": "function",
+          "summary": "Safely parse a single ADR from a pre-parsed value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - An `unknown` value (typically the result of `JSON.parse`)."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod `SafeParseReturnType` containing either the validated\n{@link ADRRecord} or a {@link z.ZodError}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 247
+        },
+        {
+          "id": 17,
+          "name": "safeParseADRRecordString",
+          "kind": "function",
+          "summary": "Safely parse a single ADR from a raw JSON string.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "JSON syntax errors are wrapped in a {@link z.ZodError} so the\nreturn type is uniform regardless of failure mode."
+            },
+            {
+              "tag": "@param",
+              "text": "input - A JSON string representing one ADR object."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod `SafeParseReturnType` containing either the validated\n{@link ADRRecord} or a {@link z.ZodError}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 276
+        },
+        {
+          "id": 25,
+          "name": "serializeADR",
+          "kind": "function",
+          "summary": "Serialize a single validated ADR record to a JSON string.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Accepts an already-validated {@link ADRRecord} — no re-validation is\nperformed. To validate-then-serialize from untrusted input, call\n{@link parseADRRecord} first."
+            },
+            {
+              "tag": "@param",
+              "text": "record - A validated ADR record."
+            },
+            {
+              "tag": "@returns",
+              "text": "A single-line JSON string."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 474
+        },
+        {
+          "id": 26,
+          "name": "serializeADRsToJsonl",
+          "kind": "function",
+          "summary": "Serialize an array of ADR records to JSONL format.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Output uses one JSON object per line with a trailing newline,\nconsistent with the JSONL specification."
+            },
+            {
+              "tag": "@param",
+              "text": "records - A validated array of ADR records."
+            },
+            {
+              "tag": "@returns",
+              "text": "A JSONL-formatted string."
+            }
+          ],
+          "sourcePath": "_specs/schemas/adr.ts",
+          "line": 488
+        }
+      ]
+    },
+    {
+      "id": 53,
+      "name": "continuity-journal",
+      "summary": "blockers, and handoff data across coding sessions. See docs/_specs/schemas/docs/continuity-journal-design.md for design details.",
+      "sourcePath": "_specs/schemas/continuity-journal.ts",
+      "symbols": [
+        {
+          "id": 46,
+          "name": "AIHandoff",
+          "kind": "type",
+          "summary": "Represent AIHandoff values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 226
+        },
+        {
+          "id": 45,
+          "name": "AIHandoffSchema",
+          "kind": "const",
+          "summary": "Define the AIHandoffSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 213
+        },
+        {
+          "id": 38,
+          "name": "BlockedStopReasonSchema",
+          "kind": "const",
+          "summary": "Variant for when progress is blocked by an external dependency",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 132
+        },
+        {
+          "id": 37,
+          "name": "BranchState",
+          "kind": "type",
+          "summary": "Represent BranchState values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 125
+        },
+        {
+          "id": 36,
+          "name": "BranchStateSchema",
+          "kind": "const",
+          "summary": "Define the BranchStateSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 106
+        },
+        {
+          "id": 52,
+          "name": "ContinuityJournal",
+          "kind": "type",
+          "summary": "Represent ContinuityJournal values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 376
+        },
+        {
+          "id": 50,
+          "name": "ContinuityJournalEntry",
+          "kind": "type",
+          "summary": "Represent ContinuityJournalEntry values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 360
+        },
+        {
+          "id": 49,
+          "name": "ContinuityJournalEntrySchema",
+          "kind": "const",
+          "summary": "Define the ContinuityJournalEntrySchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 247
+        },
+        {
+          "id": 51,
+          "name": "ContinuityJournalSchema",
+          "kind": "const",
+          "summary": "Define the ContinuityJournalSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 369
+        },
+        {
+          "id": 29,
+          "name": "DurationMinutesSchema",
+          "kind": "const",
+          "summary": "Define the DurationMinutesSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 24
+        },
+        {
+          "id": 44,
+          "name": "EnvironmentSnapshot",
+          "kind": "type",
+          "summary": "Represent EnvironmentSnapshot values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 206
+        },
+        {
+          "id": 43,
+          "name": "EnvironmentSnapshotSchema",
+          "kind": "const",
+          "summary": "Define the EnvironmentSnapshotSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 189
+        },
+        {
+          "id": 33,
+          "name": "FileReference",
+          "kind": "type",
+          "summary": "Represent FileReference values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 72
+        },
+        {
+          "id": 32,
+          "name": "FileReferenceSchema",
+          "kind": "const",
+          "summary": "Define the FileReferenceSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 45
+        },
+        {
+          "id": 28,
+          "name": "HHMMSchema",
+          "kind": "const",
+          "summary": "Define the HHMMSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 19
+        },
+        {
+          "id": 31,
+          "name": "Intensity",
+          "kind": "type",
+          "summary": "Represent Intensity values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 38
+        },
+        {
+          "id": 30,
+          "name": "IntensitySchema",
+          "kind": "const",
+          "summary": "Define the IntensitySchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 30
+        },
+        {
+          "id": 42,
+          "name": "NextStep",
+          "kind": "type",
+          "summary": "Represent NextStep values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 182
+        },
+        {
+          "id": 41,
+          "name": "NextStepSchema",
+          "kind": "const",
+          "summary": "Define the NextStepSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 171
+        },
+        {
+          "id": 35,
+          "name": "OpenQuestion",
+          "kind": "type",
+          "summary": "Represent OpenQuestion values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 99
+        },
+        {
+          "id": 34,
+          "name": "OpenQuestionSchema",
+          "kind": "const",
+          "summary": "Define the OpenQuestionSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 79
+        },
+        {
+          "id": 40,
+          "name": "StopReason",
+          "kind": "type",
+          "summary": "Represent StopReason values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 164
+        },
+        {
+          "id": 39,
+          "name": "StopReasonSchema",
+          "kind": "const",
+          "summary": "Define the StopReasonSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 139
+        },
+        {
+          "id": 48,
+          "name": "WeightedObservation",
+          "kind": "type",
+          "summary": "Represent WeightedObservation values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 240
+        },
+        {
+          "id": 47,
+          "name": "WeightedObservationSchema",
+          "kind": "const",
+          "summary": "Define the WeightedObservationSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/continuity-journal.ts",
+          "line": 233
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "name": "feature-registry-loader",
+      "summary": "feature JSON documents from the configured feature directory. Define the metadata filename required in each feature registry directory.",
+      "sourcePath": "_specs/schemas/feature-registry-loader.ts",
+      "symbols": [
+        {
+          "id": 54,
+          "name": "FEATURE_REGISTRY_META_FILE",
+          "kind": "const",
+          "summary": "Define the metadata filename required in each feature registry directory.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-registry-loader.ts",
+          "line": 15
+        },
+        {
+          "id": 55,
+          "name": "loadFeatureRegistrySync",
+          "kind": "const",
+          "summary": "Load and validate feature registry data from disk.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "featuresDir - Directory containing `registry-meta.json` and feature JSON files."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated and order-sorted {@link FeatureRegistry}."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If required files are missing or data fails schema validation."
+            }
+          ],
+          "sourcePath": "_specs/schemas/feature-registry-loader.ts",
+          "line": 29
+        }
+      ]
+    },
+    {
+      "id": 91,
+      "name": "feature-schema",
+      "summary": "feature discovery, lifecycle tracking, and registry serialization. Define the FeatureStatusSchema validation schema.",
+      "sourcePath": "_specs/schemas/feature-schema.ts",
+      "symbols": [
+        {
+          "id": 64,
+          "name": "ConfigType",
+          "kind": "type",
+          "summary": "Represent ConfigType values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 47
+        },
+        {
+          "id": 63,
+          "name": "ConfigTypeSchema",
+          "kind": "const",
+          "summary": "Define the ConfigTypeSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 44
+        },
+        {
+          "id": 60,
+          "name": "DependencyType",
+          "kind": "type",
+          "summary": "Represent DependencyType values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 35
+        },
+        {
+          "id": 59,
+          "name": "DependencyTypeSchema",
+          "kind": "const",
+          "summary": "Define the DependencyTypeSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 32
+        },
+        {
+          "id": 84,
+          "name": "DerivedMetadata",
+          "kind": "type",
+          "summary": "Represent DerivedMetadata values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 346
+        },
+        {
+          "id": 83,
+          "name": "DerivedMetadataSchema",
+          "kind": "const",
+          "summary": "Metadata that is auto-computed from file analysis and test reports.\nSeparate from manually-declared metadata to prevent accidental overwrites.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 328
+        },
+        {
+          "id": 66,
+          "name": "EntitlementPlan",
+          "kind": "type",
+          "summary": "Represent EntitlementPlan values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 53
+        },
+        {
+          "id": 65,
+          "name": "EntitlementPlanSchema",
+          "kind": "const",
+          "summary": "Define the EntitlementPlanSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 50
+        },
+        {
+          "id": 86,
+          "name": "Feature",
+          "kind": "type",
+          "summary": "Represent Feature values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 429
+        },
+        {
+          "id": 78,
+          "name": "FeatureConfig",
+          "kind": "type",
+          "summary": "Represent FeatureConfig values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 248
+        },
+        {
+          "id": 77,
+          "name": "FeatureConfigSchema",
+          "kind": "const",
+          "summary": "Define the FeatureConfigSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 226
+        },
+        {
+          "id": 76,
+          "name": "FeatureDependency",
+          "kind": "type",
+          "summary": "Represent FeatureDependency values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 219
+        },
+        {
+          "id": 75,
+          "name": "FeatureDependencySchema",
+          "kind": "const",
+          "summary": "Define the FeatureDependencySchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 208
+        },
+        {
+          "id": 74,
+          "name": "FeatureEntitlement",
+          "kind": "type",
+          "summary": "Represent FeatureEntitlement values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 201
+        },
+        {
+          "id": 73,
+          "name": "FeatureEntitlementSchema",
+          "kind": "const",
+          "summary": "Define the FeatureEntitlementSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 182
+        },
+        {
+          "id": 80,
+          "name": "FeatureEvent",
+          "kind": "type",
+          "summary": "Represent FeatureEvent values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 291
+        },
+        {
+          "id": 79,
+          "name": "FeatureEventSchema",
+          "kind": "const",
+          "summary": "Define the FeatureEventSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 255
+        },
+        {
+          "id": 70,
+          "name": "FeatureFile",
+          "kind": "type",
+          "summary": "Represent FeatureFile values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 151
+        },
+        {
+          "id": 69,
+          "name": "FeatureFileSchema",
+          "kind": "const",
+          "summary": "Define the FeatureFileSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 96
+        },
+        {
+          "id": 68,
+          "name": "FeatureHint",
+          "kind": "type",
+          "summary": "Represent FeatureHint values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 89
+        },
+        {
+          "id": 67,
+          "name": "FeatureHintSchema",
+          "kind": "const",
+          "summary": "A hint is a probe that runs against a file's content to confirm\nthe file is genuinely linked to the feature (not just co-located).\n- class:  look for a class declaration by name\n- method: look for a method/function declaration by name\n- regex:  arbitrary pattern match (stored as string, compiled at runtime)",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 67
+        },
+        {
+          "id": 72,
+          "name": "FeatureModule",
+          "kind": "type",
+          "summary": "Represent FeatureModule values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 175
+        },
+        {
+          "id": 71,
+          "name": "FeatureModuleSchema",
+          "kind": "const",
+          "summary": "Define the FeatureModuleSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 158
+        },
+        {
+          "id": 90,
+          "name": "FeatureRegistry",
+          "kind": "type",
+          "summary": "Represent FeatureRegistry values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 489
+        },
+        {
+          "id": 89,
+          "name": "FeatureRegistrySchema",
+          "kind": "const",
+          "summary": "Define the FeatureRegistrySchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 474
+        },
+        {
+          "id": 85,
+          "name": "FeatureSchema",
+          "kind": "const",
+          "summary": "Define the FeatureSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 353
+        },
+        {
+          "id": 58,
+          "name": "FeatureStatus",
+          "kind": "type",
+          "summary": "Represent FeatureStatus values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 29
+        },
+        {
+          "id": 57,
+          "name": "FeatureStatusSchema",
+          "kind": "const",
+          "summary": "Define the FeatureStatusSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 19
+        },
+        {
+          "id": 82,
+          "name": "FieldMutability",
+          "kind": "type",
+          "summary": "Represent FieldMutability values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 322
+        },
+        {
+          "id": 81,
+          "name": "FieldMutabilitySchema",
+          "kind": "const",
+          "summary": "Controls which fields can be auto-updated by scans vs. require manual edits.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 300
+        },
+        {
+          "id": 62,
+          "name": "HintType",
+          "kind": "type",
+          "summary": "Represent HintType values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 41
+        },
+        {
+          "id": 61,
+          "name": "HintTypeSchema",
+          "kind": "const",
+          "summary": "Define the HintTypeSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 38
+        },
+        {
+          "id": 88,
+          "name": "ScanHistory",
+          "kind": "type",
+          "summary": "Represent ScanHistory values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 467
+        },
+        {
+          "id": 87,
+          "name": "ScanHistorySchema",
+          "kind": "const",
+          "summary": "Record of a feature registry scan.\nTracks which features/files were scanned, what changed, and performance.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/feature-schema.ts",
+          "line": 439
+        }
+      ]
+    },
+    {
+      "id": 92,
+      "name": "feedback",
+      "summary": "message model from the constraint paper (§2.5). for actor projection and §4.8 for verification cost.",
+      "sourcePath": "_specs/schemas/feedback.ts",
+      "symbols": []
+    },
+    {
+      "id": 100,
+      "name": "localization",
+      "summary": "site or content schema for multi-language support. Define the PluralizationConfigSchema validation schema.",
+      "sourcePath": "_specs/schemas/localization.ts",
+      "symbols": [
+        {
+          "id": 96,
+          "name": "InterpolationConfig",
+          "kind": "type",
+          "summary": "Represent InterpolationConfig values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 41
+        },
+        {
+          "id": 95,
+          "name": "InterpolationConfigSchema",
+          "kind": "const",
+          "summary": "Define the InterpolationConfigSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 35
+        },
+        {
+          "id": 98,
+          "name": "LocalizationConfig",
+          "kind": "type",
+          "summary": "Represent LocalizationConfig values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 69
+        },
+        {
+          "id": 97,
+          "name": "LocalizationConfigSchema",
+          "kind": "const",
+          "summary": "Define the LocalizationConfigSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 48
+        },
+        {
+          "id": 99,
+          "name": "LocalizationMixin",
+          "kind": "const",
+          "summary": "Define the LocalizationMixin mixin schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 76
+        },
+        {
+          "id": 94,
+          "name": "PluralizationConfig",
+          "kind": "type",
+          "summary": "Represent PluralizationConfig values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 28
+        },
+        {
+          "id": 93,
+          "name": "PluralizationConfigSchema",
+          "kind": "const",
+          "summary": "Define the PluralizationConfigSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/localization.ts",
+          "line": 22
+        }
+      ]
+    },
+    {
+      "id": 105,
+      "name": "mental-model-schema",
+      "summary": "assumptions, and open questions before generating a formal execution plan. so the human can evaluate whether the model addresses it.",
+      "sourcePath": "_specs/schemas/mental-model-schema.ts",
+      "symbols": [
+        {
+          "id": 102,
+          "name": "MentalModel",
+          "kind": "type",
+          "summary": "Represent MentalModel values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/mental-model-schema.ts",
+          "line": 424
+        },
+        {
+          "id": 101,
+          "name": "MentalModelSchema",
+          "kind": "const",
+          "summary": "Define the MentalModelSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/mental-model-schema.ts",
+          "line": 391
+        },
+        {
+          "id": 103,
+          "name": "MentalModelValidationResult",
+          "kind": "interface",
+          "summary": "Define the MentalModelValidationResult interface contract.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/mental-model-schema.ts",
+          "line": 431
+        },
+        {
+          "id": 104,
+          "name": "validateMentalModel",
+          "kind": "function",
+          "summary": "Validate a mental model's internal consistency and readiness.\nA mental model is \"ready-for-plan\" only when:\n- No open questions remain\n- No open decisions remain\n- No unverified entities exist\n- Overall confidence is \"high\"\nThis is intentionally strict. The whole point is to force resolution\nBEFORE plan generation, not during.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "model - Mental model document to validate."
+            },
+            {
+              "tag": "@returns",
+              "text": "Validation result with structural errors, readiness warnings, and status."
+            }
+          ],
+          "sourcePath": "_specs/schemas/mental-model-schema.ts",
+          "line": 453
+        }
+      ]
+    },
+    {
+      "id": 123,
+      "name": "patchable",
+      "summary": "including nested array operations, diff computation, and transactions.",
+      "sourcePath": "_specs/schemas/patchable.ts",
+      "symbols": [
+        {
+          "id": 118,
+          "name": "applyArrayOps",
+          "kind": "function",
+          "summary": "Apply ordered array patch operations to an identified collection.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "current - Current array snapshot."
+            },
+            {
+              "tag": "@param",
+              "text": "ops - Ordered array operations to apply."
+            },
+            {
+              "tag": "@param",
+              "text": "patchFn - Item patch function used for update operations."
+            },
+            {
+              "tag": "@param",
+              "text": "resolve - Resolver that maps symbolic IDs to concrete IDs."
+            },
+            {
+              "tag": "@returns",
+              "text": "Updated and re-indexed array."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 373
+        },
+        {
+          "id": 108,
+          "name": "BatchEntry",
+          "kind": "interface",
+          "summary": "One entry in a batch — a labeled patch",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 35
+        },
+        {
+          "id": 109,
+          "name": "BatchEntryResult",
+          "kind": "type",
+          "summary": "Result of one patch within a batch",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 43
+        },
+        {
+          "id": 111,
+          "name": "BatchOptions",
+          "kind": "interface",
+          "summary": "Options controlling batch behavior",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 64
+        },
+        {
+          "id": 110,
+          "name": "BatchResult",
+          "kind": "interface",
+          "summary": "Full batch result",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 48
+        },
+        {
+          "id": 119,
+          "name": "computeDiff",
+          "kind": "function",
+          "summary": "Compute field-level diffs between two object trees.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "original - Original object state."
+            },
+            {
+              "tag": "@param",
+              "text": "updated - Updated object state."
+            },
+            {
+              "tag": "@param",
+              "text": "prefix - Optional path prefix for recursive traversal."
+            },
+            {
+              "tag": "@returns",
+              "text": "Flat list of changed paths with before/after values."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 446
+        },
+        {
+          "id": 117,
+          "name": "deepMerge",
+          "kind": "function",
+          "summary": "RFC 7396-style deep merge.\n- `undefined` → skip\n- `null`      → set to null\n- object+object → recurse\n- everything else → replace",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "target - Base object."
+            },
+            {
+              "tag": "@param",
+              "text": "patch - Partial patch object to merge."
+            },
+            {
+              "tag": "@returns",
+              "text": "Merged object preserving recursive semantics."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 288
+        },
+        {
+          "id": 116,
+          "name": "deriveDeepPartial",
+          "kind": "function",
+          "summary": "Derive a deep-partial patch schema from any ZodObject.\n- Object fields → recursively deep-partial, then optional\n- Discriminated unions → kept as-is but optional (replace variant)\n- Arrays → optional (replace semantics)\n- Scalars → optional\n- Nullable fields → optional + nullable",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "schema - Source object schema to transform."
+            },
+            {
+              "tag": "@returns",
+              "text": "Deep-partial schema suitable for patch payloads."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 254
+        },
+        {
+          "id": 106,
+          "name": "DiffEntry",
+          "kind": "type",
+          "summary": "A single change record",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 17
+        },
+        {
+          "id": 121,
+          "name": "patchable",
+          "kind": "function",
+          "summary": "┌─────────────────────────────────────────────────────────┐\n│  patchable(schema, config?) → Patchable<TSchema>        │\n│                                                         │\n│  Wraps any Zod v4 object schema with:                   │\n│   • Auto-derived deep-partial patch schema              │\n│   • Array patch ops for identified collections          │\n│   • Recursive nested patching                           │\n│   • Validated apply + diff                              │\n└─────────────────────────────────────────────────────────┘",
+          "tags": [
+            {
+              "tag": "@example",
+              "text": "```ts\nimport { patchable } from \"./patchable\";\nimport { ContentSchema } from \"./content\";\nimport { PresentationSchema } from \"./presentation\";\nconst PatchableContent = patchable(ContentSchema, {\nimmutable: [\"id\", \"created_at\", \"created_by\"],\nnested: {\nsections: {\nimmutable: [\"id\"],\nidentifiedArrays: [\"blocks\"],\nnested: {\nblocks: { immutable: [\"id\"] },\n},\n},\n},\n});\nconst PatchablePresentation = patchable(PresentationSchema, {\nimmutable: [\"id\", \"created_at\", \"created_by\"],\nnested: {\nslides: {\nimmutable: [\"id\"],\nidentifiedArrays: [\"slot_bindings\", \"decorations\"],\n},\n},\n});\n// Apply a targeted patch\nconst result = PatchableContent.apply(existingContent, {\ntitle: \"Updated Title\",\nsections: [\n{ op: \"update\", id: \"sec-1\", patch: {\ntitle: \"Renamed Section\",\nblocks: [\n{ op: \"update\", id: \"blk-1\", patch: { content: { type: \"text\", alignment: \"center\" } } },\n{ op: \"add\", item: newBlock },\n{ op: \"move\", id: \"blk-3\", before_id: \"blk-1\" },\n],\n}},\n{ op: \"remove\", id: \"sec-old\" },\n],\n});\nconsole.log(result.diff);     // what changed\nconsole.log(result.changed);  // boolean\nconsole.log(result.data);     // fully validated new entity\n```"
+            },
+            {
+              "tag": "@param",
+              "text": "schema - Source Zod object schema."
+            },
+            {
+              "tag": "@param",
+              "text": "config - Patch behavior configuration."
+            },
+            {
+              "tag": "@returns",
+              "text": "Patchable wrapper exposing patch validation and apply helpers."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 588
+        },
+        {
+          "id": 120,
+          "name": "Patchable",
+          "kind": "interface",
+          "summary": "Define the Patchable interface contract.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 474
+        },
+        {
+          "id": 115,
+          "name": "PatchableConfig",
+          "kind": "interface",
+          "summary": "Configuration for the patchable plugin",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 103
+        },
+        {
+          "id": 107,
+          "name": "PatchResult",
+          "kind": "interface",
+          "summary": "Result of applying a patch",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 24
+        },
+        {
+          "id": 122,
+          "name": "transaction",
+          "kind": "function",
+          "summary": "Apply patches across multiple different entities atomically.\nIf any step fails, ALL entities are rolled back to their originals.",
+          "tags": [
+            {
+              "tag": "@example",
+              "text": "```ts\nconst result = transaction([\n{\npatchable: PatchableContent,\ncurrent: existingContent,\npatches: { title: \"Updated\" },\nlabel: \"content\",\n},\n{\npatchable: PatchablePresentation,\ncurrent: existingDeck,\npatches: [\n{ label: \"rename\", patch: { title: \"New Deck Title\" } },\n{ label: \"reorder\", patch: { slides: [{ op: \"move\", id: \"s1\", to_order: 0 }] } },\n],\nlabel: \"presentation\",\n},\n]);\nif (result.allSucceeded) {\nconst [contentResult, deckResult] = result.steps;\n// contentResult.result.data  → new Content\n// deckResult.result.data     → new Presentation\n}\n```"
+            },
+            {
+              "tag": "@param",
+              "text": "steps - Ordered cross-entity transaction steps."
+            },
+            {
+              "tag": "@returns",
+              "text": "Transaction result with per-step outcomes and rollback status."
+            }
+          ],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 915
+        },
+        {
+          "id": 114,
+          "name": "TransactionResult",
+          "kind": "interface",
+          "summary": "Full cross-entity transaction result",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 93
+        },
+        {
+          "id": 112,
+          "name": "TransactionStep",
+          "kind": "interface",
+          "summary": "One step in a cross-entity transaction",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 76
+        },
+        {
+          "id": 113,
+          "name": "TransactionStepResult",
+          "kind": "type",
+          "summary": "Result of one step in a cross-entity transaction",
+          "tags": [],
+          "sourcePath": "_specs/schemas/patchable.ts",
+          "line": 88
+        }
+      ]
+    },
+    {
+      "id": 138,
+      "name": "permissions",
+      "summary": "enforce access control and generate permission-aware content. Define the DataScopeSchema validation schema.",
+      "sourcePath": "_specs/schemas/permissions.ts",
+      "symbols": [
+        {
+          "id": 125,
+          "name": "DataScope",
+          "kind": "type",
+          "summary": "Represent DataScope values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 24
+        },
+        {
+          "id": 133,
+          "name": "DataScopeRule",
+          "kind": "type",
+          "summary": "Represent DataScopeRule values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 86
+        },
+        {
+          "id": 132,
+          "name": "DataScopeRuleSchema",
+          "kind": "const",
+          "summary": "Define the DataScopeRuleSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 79
+        },
+        {
+          "id": 124,
+          "name": "DataScopeSchema",
+          "kind": "const",
+          "summary": "Define the DataScopeSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 22
+        },
+        {
+          "id": 131,
+          "name": "FeatureEntitlement",
+          "kind": "type",
+          "summary": "Represent FeatureEntitlement values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 72
+        },
+        {
+          "id": 130,
+          "name": "FeatureEntitlementSchema",
+          "kind": "const",
+          "summary": "Define the FeatureEntitlementSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 63
+        },
+        {
+          "id": 129,
+          "name": "PermissionDefinition",
+          "kind": "type",
+          "summary": "Represent PermissionDefinition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 56
+        },
+        {
+          "id": 128,
+          "name": "PermissionDefinitionSchema",
+          "kind": "const",
+          "summary": "Define the PermissionDefinitionSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 48
+        },
+        {
+          "id": 137,
+          "name": "PermissionsModel",
+          "kind": "type",
+          "summary": "Represent PermissionsModel values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 118
+        },
+        {
+          "id": 136,
+          "name": "PermissionsModelSchema",
+          "kind": "const",
+          "summary": "Define the PermissionsModelSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 108
+        },
+        {
+          "id": 135,
+          "name": "PermissionUIBehavior",
+          "kind": "type",
+          "summary": "Represent PermissionUIBehavior values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 101
+        },
+        {
+          "id": 134,
+          "name": "PermissionUIBehaviorSchema",
+          "kind": "const",
+          "summary": "Define the PermissionUIBehaviorSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 93
+        },
+        {
+          "id": 127,
+          "name": "RoleDefinition",
+          "kind": "type",
+          "summary": "Represent RoleDefinition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 41
+        },
+        {
+          "id": 126,
+          "name": "RoleDefinitionSchema",
+          "kind": "const",
+          "summary": "Define the RoleDefinitionSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/permissions.ts",
+          "line": 31
+        }
+      ]
+    },
+    {
+      "id": 180,
+      "name": "plan-schema",
+      "summary": "Define the operational schema for multi-actor execution plans. This module implements the formal constraint model used by planning workflows.",
+      "sourcePath": "_specs/schemas/plan-schema.ts",
+      "symbols": [
+        {
+          "id": 173,
+          "name": "AcceptanceCriterion",
+          "kind": "type",
+          "summary": "Represent AcceptanceCriterion values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 686
+        },
+        {
+          "id": 151,
+          "name": "ActorLifespan",
+          "kind": "type",
+          "summary": "Represent ActorLifespan values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 642
+        },
+        {
+          "id": 150,
+          "name": "ActorRegistration",
+          "kind": "type",
+          "summary": "Represent ActorRegistration values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 640
+        },
+        {
+          "id": 146,
+          "name": "BaselineState",
+          "kind": "type",
+          "summary": "Represent BaselineState values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 632
+        },
+        {
+          "id": 163,
+          "name": "BlastRadiusEntry",
+          "kind": "type",
+          "summary": "Represent BlastRadiusEntry values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 666
+        },
+        {
+          "id": 154,
+          "name": "ChannelBandwidth",
+          "kind": "type",
+          "summary": "Represent ChannelBandwidth values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 648
+        },
+        {
+          "id": 153,
+          "name": "CommunicationChannel",
+          "kind": "type",
+          "summary": "Represent CommunicationChannel values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 646
+        },
+        {
+          "id": 155,
+          "name": "ConcurrencyModel",
+          "kind": "type",
+          "summary": "Represent ConcurrencyModel values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 650
+        },
+        {
+          "id": 172,
+          "name": "DataSyncRules",
+          "kind": "type",
+          "summary": "Represent DataSyncRules values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 684
+        },
+        {
+          "id": 169,
+          "name": "Decision",
+          "kind": "type",
+          "summary": "Represent Decision values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 678
+        },
+        {
+          "id": 176,
+          "name": "ExecutionOrder",
+          "kind": "type",
+          "summary": "Represent ExecutionOrder values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 692
+        },
+        {
+          "id": 162,
+          "name": "FileChange",
+          "kind": "type",
+          "summary": "Represent FileChange values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 664
+        },
+        {
+          "id": 175,
+          "name": "FutureWorkItem",
+          "kind": "type",
+          "summary": "Represent FutureWorkItem values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 690
+        },
+        {
+          "id": 167,
+          "name": "HandoffState",
+          "kind": "type",
+          "summary": "Represent HandoffState values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 674
+        },
+        {
+          "id": 157,
+          "name": "IntentConstraint",
+          "kind": "type",
+          "summary": "Represent IntentConstraint values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 654
+        },
+        {
+          "id": 174,
+          "name": "MergeStrategy",
+          "kind": "type",
+          "summary": "Represent MergeStrategy values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 688
+        },
+        {
+          "id": 147,
+          "name": "MetricThreshold",
+          "kind": "type",
+          "summary": "Represent MetricThreshold values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 634
+        },
+        {
+          "id": 171,
+          "name": "MigrationPolicy",
+          "kind": "type",
+          "summary": "Represent MigrationPolicy values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 682
+        },
+        {
+          "id": 140,
+          "name": "Plan",
+          "kind": "type",
+          "summary": "Represent Plan values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 618
+        },
+        {
+          "id": 141,
+          "name": "PlanInput",
+          "kind": "type",
+          "summary": "Represent PlanInput values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 620
+        },
+        {
+          "id": 142,
+          "name": "PlanMetadata",
+          "kind": "type",
+          "summary": "Represent PlanMetadata values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 624
+        },
+        {
+          "id": 139,
+          "name": "PlanSchema",
+          "kind": "const",
+          "summary": "Define the PlanSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 591
+        },
+        {
+          "id": 159,
+          "name": "PlanStep",
+          "kind": "type",
+          "summary": "Represent PlanStep values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 658
+        },
+        {
+          "id": 143,
+          "name": "PlanVersionTransition",
+          "kind": "type",
+          "summary": "Represent PlanVersionTransition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 626
+        },
+        {
+          "id": 144,
+          "name": "ProblemDefinition",
+          "kind": "type",
+          "summary": "Represent ProblemDefinition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 628
+        },
+        {
+          "id": 152,
+          "name": "ReproducibilityContext",
+          "kind": "type",
+          "summary": "Represent ReproducibilityContext values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 644
+        },
+        {
+          "id": 145,
+          "name": "Resource",
+          "kind": "type",
+          "summary": "Represent Resource values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 630
+        },
+        {
+          "id": 165,
+          "name": "Reversibility",
+          "kind": "type",
+          "summary": "Represent Reversibility values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 670
+        },
+        {
+          "id": 168,
+          "name": "Risk",
+          "kind": "type",
+          "summary": "Represent Risk values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 676
+        },
+        {
+          "id": 148,
+          "name": "ScopeDefinition",
+          "kind": "type",
+          "summary": "Represent ScopeDefinition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 636
+        },
+        {
+          "id": 149,
+          "name": "ScopeZone",
+          "kind": "type",
+          "summary": "Represent ScopeZone values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 638
+        },
+        {
+          "id": 161,
+          "name": "StepResourceRequirements",
+          "kind": "type",
+          "summary": "Represent StepResourceRequirements values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 662
+        },
+        {
+          "id": 166,
+          "name": "StopCondition",
+          "kind": "type",
+          "summary": "Represent StopCondition values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 672
+        },
+        {
+          "id": 170,
+          "name": "SyncRule",
+          "kind": "type",
+          "summary": "Represent SyncRule values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 680
+        },
+        {
+          "id": 156,
+          "name": "TemporalScope",
+          "kind": "type",
+          "summary": "Represent TemporalScope values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 652
+        },
+        {
+          "id": 179,
+          "name": "validatePlanConsistency",
+          "kind": "function",
+          "summary": "Return only hard consistency errors for backward compatibility.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "plan - Parsed plan document to validate."
+            },
+            {
+              "tag": "@returns",
+              "text": "Array of hard consistency errors."
+            }
+          ],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 993
+        },
+        {
+          "id": 178,
+          "name": "validateWellFormedness",
+          "kind": "function",
+          "summary": "Validate structural and governance constraints for a plan instance.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "plan - Parsed plan document to validate."
+            },
+            {
+              "tag": "@returns",
+              "text": "Hard errors and warning signals discovered by well-formedness checks."
+            }
+          ],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 736
+        },
+        {
+          "id": 160,
+          "name": "ValidationBudget",
+          "kind": "type",
+          "summary": "Represent ValidationBudget values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 660
+        },
+        {
+          "id": 164,
+          "name": "VerificationCheck",
+          "kind": "type",
+          "summary": "Represent VerificationCheck values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 668
+        },
+        {
+          "id": 158,
+          "name": "VerificationEconomics",
+          "kind": "type",
+          "summary": "Represent VerificationEconomics values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 656
+        },
+        {
+          "id": 177,
+          "name": "WellFormednessResult",
+          "kind": "interface",
+          "summary": "Define the WellFormednessResult interface contract.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/plan-schema.ts",
+          "line": 699
+        }
+      ]
+    },
+    {
+      "id": 228,
+      "name": "prompt-schema",
+      "summary": "discriminated union. references, and migration guide.",
+      "sourcePath": "_specs/schemas/prompt-schema.ts",
+      "symbols": [
+        {
+          "id": 205,
+          "name": "CallSpec",
+          "kind": "type",
+          "summary": "Validated single-call specification, inferred from {@link CallSpecSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 786
+        },
+        {
+          "id": 196,
+          "name": "CallSpecSchema",
+          "kind": "const",
+          "summary": "Define everything that goes into a single API call.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Compilation target: given a CallSpec and variable bindings, a runtime\ndeterministically produces an Anthropic Messages API request body.\nA bidirectional refinement ensures every `{{var}}` in `userTemplate`\nis declared, and every required variable is referenced.\nSee docs/prompt-schema.md for full compilation semantics."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 268
+        },
+        {
+          "id": 221,
+          "name": "chainedExample",
+          "kind": "const",
+          "summary": "Type-checked example of recursive chain composition.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1011
+        },
+        {
+          "id": 194,
+          "name": "ChainOfThoughtSchema",
+          "kind": "const",
+          "summary": "Chain-of-Thought: elicit step-by-step reasoning.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 235
+        },
+        {
+          "id": 212,
+          "name": "ContextConfig",
+          "kind": "type",
+          "summary": "Validated context engineering config, inferred from {@link ContextConfigSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 809
+        },
+        {
+          "id": 199,
+          "name": "ContextConfigSchema",
+          "kind": "const",
+          "summary": "Validate full context engineering configuration.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Token budget refinement ensures the sum of sub-budgets does not\nexceed the total when all are specified."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 423
+        },
+        {
+          "id": 216,
+          "name": "Evaluation",
+          "kind": "type",
+          "summary": "Validated evaluation criteria set, inferred from {@link EvaluationSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 821
+        },
+        {
+          "id": 202,
+          "name": "EvaluationSchema",
+          "kind": "const",
+          "summary": "Validate evaluation criteria and optional reference outputs.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Weights are relative (normalized by the consumer). When all\ncriteria specify weights, they must sum to ~1.0 (±0.01).\nPartial weighting (some criteria without weights) is valid."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 680
+        },
+        {
+          "id": 208,
+          "name": "Example",
+          "kind": "type",
+          "summary": "Validated few-shot example pair, inferred from {@link ExampleSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 797
+        },
+        {
+          "id": 220,
+          "name": "examplePromptDocument",
+          "kind": "const",
+          "summary": "Type-checked sample prompt document for a TypeScript code review.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 861
+        },
+        {
+          "id": 184,
+          "name": "ExampleSchema",
+          "kind": "const",
+          "summary": "A single input→output example for few-shot prompting.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 107
+        },
+        {
+          "id": 193,
+          "name": "FewShotSchema",
+          "kind": "const",
+          "summary": "Few-shot: provide input/output examples.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 221
+        },
+        {
+          "id": 214,
+          "name": "Memory",
+          "kind": "type",
+          "summary": "Validated memory configuration, inferred from {@link MemorySchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 815
+        },
+        {
+          "id": 198,
+          "name": "MemorySchema",
+          "kind": "const",
+          "summary": "Validate short-term and long-term memory configuration.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 382
+        },
+        {
+          "id": 210,
+          "name": "ModelParams",
+          "kind": "type",
+          "summary": "Validated model inference parameters, inferred from {@link ModelParamsSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 803
+        },
+        {
+          "id": 187,
+          "name": "ModelParamsSchema",
+          "kind": "const",
+          "summary": "Model-level inference parameters for a single API call.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 165
+        },
+        {
+          "id": 201,
+          "name": "Orchestration",
+          "kind": "type",
+          "summary": "Recursive orchestration strategy union, defined manually for `z.lazy()` compatibility.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 634
+        },
+        {
+          "id": 200,
+          "name": "OrchestrationSchema",
+          "kind": "const",
+          "summary": "Discriminated union of multi-call coordination strategies.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Recursive via `z.lazy()`: a chain step's orchestration field is\nitself an OrchestrationSchema, enabling arbitrary nesting.\nEach variant wraps one or more {@link CallSpecSchema} instances.\nSee docs/prompt-schema.md for execution semantics per strategy."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 497
+        },
+        {
+          "id": 209,
+          "name": "OutputFormat",
+          "kind": "type",
+          "summary": "Validated output format descriptor, inferred from {@link OutputFormatSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 800
+        },
+        {
+          "id": 185,
+          "name": "OutputFormatSchema",
+          "kind": "const",
+          "summary": "Validate output format type, optional JSON Schema, and constraints.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 120
+        },
+        {
+          "id": 224,
+          "name": "parseCallSpec",
+          "kind": "function",
+          "summary": "Parse and validate raw data as a {@link CallSpec}.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - Unvalidated call spec data."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link CallSpec}."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If `input` fails schema validation."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1158
+        },
+        {
+          "id": 226,
+          "name": "parsePrompt",
+          "kind": "const",
+          "summary": "",
+          "tags": [
+            {
+              "tag": "@deprecated",
+              "text": "Since v0.3.0. Use {@link parsePromptDocument} instead. Removal in v0.4.0."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1173
+        },
+        {
+          "id": 222,
+          "name": "parsePromptDocument",
+          "kind": "function",
+          "summary": "Parse and validate raw data as a {@link PromptDocument}.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - Unvalidated prompt document data."
+            },
+            {
+              "tag": "@returns",
+              "text": "A validated {@link PromptDocument}."
+            },
+            {
+              "tag": "@throws",
+              "text": "{@link z.ZodError} If `input` fails schema validation."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1137
+        },
+        {
+          "id": 217,
+          "name": "Prompt",
+          "kind": "type",
+          "summary": "",
+          "tags": [
+            {
+              "tag": "@deprecated",
+              "text": "Since v0.3.0. Use {@link PromptDocument} instead. Removal in v0.4.0."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 824
+        },
+        {
+          "id": 189,
+          "name": "PROMPT_TECHNIQUE_NAMES",
+          "kind": "const",
+          "summary": "Valid prompt-level technique discriminator values.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 203
+        },
+        {
+          "id": 204,
+          "name": "PromptDocument",
+          "kind": "type",
+          "summary": "Validated top-level prompt document, inferred from {@link PromptDocumentSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 783
+        },
+        {
+          "id": 219,
+          "name": "promptDocumentJsonSchema",
+          "kind": "const",
+          "summary": "JSON Schema representation of {@link PromptDocumentSchema} (draft-2020-12).",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "`.refine()` validations and `z.lazy()` recursive references are\nruntime-only and not expressible in JSON Schema. Consumers must\nimplement equivalent checks in their validation layer."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 838
+        },
+        {
+          "id": 203,
+          "name": "PromptDocumentSchema",
+          "kind": "const",
+          "summary": "Validate a top-level prompt document combining identity, orchestration,\ncontext engineering, and evaluation into a single versionable artifact.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 720
+        },
+        {
+          "id": 206,
+          "name": "PromptTechnique",
+          "kind": "type",
+          "summary": "Validated prompt technique variant, inferred from {@link PromptTechniqueSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 789
+        },
+        {
+          "id": 190,
+          "name": "PromptTechniqueName",
+          "kind": "type",
+          "summary": "Union type of valid prompt-level technique names.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 210
+        },
+        {
+          "id": 191,
+          "name": "PromptTechniqueNameSchema",
+          "kind": "const",
+          "summary": "Validate a string as a prompt-level technique name.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 213
+        },
+        {
+          "id": 195,
+          "name": "PromptTechniqueSchema",
+          "kind": "const",
+          "summary": "Discriminated union of prompt-level technique variants.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 250
+        },
+        {
+          "id": 213,
+          "name": "Retrieval",
+          "kind": "type",
+          "summary": "Validated retrieval source entry, inferred from {@link RetrievalSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 812
+        },
+        {
+          "id": 197,
+          "name": "RetrievalSchema",
+          "kind": "const",
+          "summary": "Validate a single RAG / retrieval source configuration.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 368
+        },
+        {
+          "id": 207,
+          "name": "Role",
+          "kind": "type",
+          "summary": "Validated model persona and behavioral constraints, inferred from {@link RoleSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 794
+        },
+        {
+          "id": 183,
+          "name": "RoleSchema",
+          "kind": "const",
+          "summary": "Semantic role the model should adopt.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 91
+        },
+        {
+          "id": 225,
+          "name": "safeParseCallSpec",
+          "kind": "function",
+          "summary": "Safely parse raw data as a {@link CallSpec} without throwing.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - Unvalidated call spec data."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod safe-parse result with `success`, `data`, or `error`."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1168
+        },
+        {
+          "id": 227,
+          "name": "safeParsePrompt",
+          "kind": "const",
+          "summary": "",
+          "tags": [
+            {
+              "tag": "@deprecated",
+              "text": "Since v0.3.0. Use {@link safeParsePromptDocument} instead. Removal in v0.4.0."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1175
+        },
+        {
+          "id": 223,
+          "name": "safeParsePromptDocument",
+          "kind": "function",
+          "summary": "Safely parse raw data as a {@link PromptDocument} without throwing.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "input - Unvalidated prompt document data."
+            },
+            {
+              "tag": "@returns",
+              "text": "A Zod safe-parse result with `success`, `data`, or `error`."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 1147
+        },
+        {
+          "id": 181,
+          "name": "SCHEMA_VERSION",
+          "kind": "const",
+          "summary": "Current schema version literal.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 19
+        },
+        {
+          "id": 182,
+          "name": "SchemaVersionSchema",
+          "kind": "const",
+          "summary": "Validate that the schema version matches the current release.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 22
+        },
+        {
+          "id": 218,
+          "name": "Technique",
+          "kind": "type",
+          "summary": "",
+          "tags": [
+            {
+              "tag": "@deprecated",
+              "text": "Since v0.3.0. Use {@link PromptTechnique} instead. Removal in v0.4.0."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 826
+        },
+        {
+          "id": 211,
+          "name": "ThinkingConfig",
+          "kind": "type",
+          "summary": "Validated thinking configuration variant, inferred from {@link ThinkingConfigSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 806
+        },
+        {
+          "id": 186,
+          "name": "ThinkingConfigSchema",
+          "kind": "const",
+          "summary": "Extended thinking configuration, discriminated on `type`.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "`\"disabled\"` omits the thinking parameter; `\"enabled\"` requires\n`budgetTokens` (Anthropic API contract). The runtime translates\nthis to the provider-specific API format."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 150
+        },
+        {
+          "id": 215,
+          "name": "ToolDefinition",
+          "kind": "type",
+          "summary": "Validated tool definition, inferred from {@link ToolDefinitionSchema}.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 818
+        },
+        {
+          "id": 188,
+          "name": "ToolDefinitionSchema",
+          "kind": "const",
+          "summary": "Canonical tool definition used across all schema layers.",
+          "tags": [
+            {
+              "tag": "@remarks",
+              "text": "Shared by {@link CallSpecSchema} and {@link OrchestrationSchema}.\nWhen both declare tools, orchestration-level tools take precedence;\ncall-level tools pass through to the API's `tools` parameter."
+            }
+          ],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 189
+        },
+        {
+          "id": 192,
+          "name": "ZeroShotSchema",
+          "kind": "const",
+          "summary": "Zero-shot: instruction only, no examples.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/prompt-schema.ts",
+          "line": 216
+        }
+      ]
+    },
+    {
+      "id": 240,
+      "name": "result",
+      "summary": "error handling without exception-based control flow. Define the ResultError interface contract.",
+      "sourcePath": "_specs/schemas/result.ts",
+      "symbols": [
+        {
+          "id": 232,
+          "name": "err",
+          "kind": "function",
+          "summary": "Create a failure result value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "error - Error payload."
+            },
+            {
+              "tag": "@returns",
+              "text": "A failure variant of {@link Result}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 36
+        },
+        {
+          "id": 233,
+          "name": "fail",
+          "kind": "function",
+          "summary": "Create a failure result from standard error parts.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "code - Stable error code."
+            },
+            {
+              "tag": "@param",
+              "text": "message - Human-readable error message."
+            },
+            {
+              "tag": "@param",
+              "text": "cause - Optional underlying error value."
+            },
+            {
+              "tag": "@returns",
+              "text": "A failure result with normalized {@link ResultError}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 48
+        },
+        {
+          "id": 239,
+          "name": "formatError",
+          "kind": "function",
+          "summary": "Normalize an unknown error value to a display string.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "error - Unknown error value."
+            },
+            {
+              "tag": "@returns",
+              "text": "Error message string."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 114
+        },
+        {
+          "id": 238,
+          "name": "isErr",
+          "kind": "function",
+          "summary": "Check whether a result is a failure.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "result - Result to inspect."
+            },
+            {
+              "tag": "@returns",
+              "text": "`true` when the value is a failure variant."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 104
+        },
+        {
+          "id": 237,
+          "name": "isOk",
+          "kind": "function",
+          "summary": "Check whether a result is successful.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "result - Result to inspect."
+            },
+            {
+              "tag": "@returns",
+              "text": "`true` when the value is a success variant."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 94
+        },
+        {
+          "id": 236,
+          "name": "map",
+          "kind": "function",
+          "summary": "Map a success payload to a new value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "result - Input result."
+            },
+            {
+              "tag": "@param",
+              "text": "fn - Mapping function for success values."
+            },
+            {
+              "tag": "@returns",
+              "text": "A mapped success result or the original failure."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 84
+        },
+        {
+          "id": 231,
+          "name": "ok",
+          "kind": "function",
+          "summary": "Create a successful result value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "data - Successful payload."
+            },
+            {
+              "tag": "@returns",
+              "text": "A success variant of {@link Result}."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 26
+        },
+        {
+          "id": 230,
+          "name": "Result",
+          "kind": "type",
+          "summary": "Represent Result values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 18
+        },
+        {
+          "id": 229,
+          "name": "ResultError",
+          "kind": "interface",
+          "summary": "Define the ResultError interface contract.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 11
+        },
+        {
+          "id": 234,
+          "name": "unwrap",
+          "kind": "function",
+          "summary": "Unwrap a result and return its success payload.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "result - Result to unwrap."
+            },
+            {
+              "tag": "@returns",
+              "text": "Success payload value."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If `result` is a failure."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 59
+        },
+        {
+          "id": 235,
+          "name": "unwrapOr",
+          "kind": "function",
+          "summary": "Unwrap a result or return a default value.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "result - Result to inspect."
+            },
+            {
+              "tag": "@param",
+              "text": "defaultValue - Fallback value when `result` is a failure."
+            },
+            {
+              "tag": "@returns",
+              "text": "Success payload or `defaultValue`."
+            }
+          ],
+          "sourcePath": "_specs/schemas/result.ts",
+          "line": 73
+        }
+      ]
+    },
+    {
+      "id": 253,
+      "name": "version-mixin",
+      "summary": "other schemas and provide parse/compare/increment helpers. See docs/_specs/schemas/docs/version-mixin-design.md for architecture notes.",
+      "sourcePath": "_specs/schemas/version-mixin.ts",
+      "symbols": [
+        {
+          "id": 250,
+          "name": "compareSemVer",
+          "kind": "function",
+          "summary": "Compare two semantic-version strings.\nBuild metadata is ignored. Prerelease values have lower precedence than\nrelease versions when major/minor/patch are equal.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "a - First version string."
+            },
+            {
+              "tag": "@param",
+              "text": "b - Second version string."
+            },
+            {
+              "tag": "@returns",
+              "text": "`-1` when `a < b`, `0` when equal, and `1` when `a > b`."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If either input is not valid SemVer."
+            }
+          ],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 176
+        },
+        {
+          "id": 249,
+          "name": "formatSemVer",
+          "kind": "function",
+          "summary": "Format a parsed SemVer object into canonical string form.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "parsed - Structured SemVer value."
+            },
+            {
+              "tag": "@returns",
+              "text": "Canonical semantic-version string."
+            }
+          ],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 154
+        },
+        {
+          "id": 251,
+          "name": "incrementSemVer",
+          "kind": "function",
+          "summary": "Increment a semantic version by bump type.\nPrerelease and build metadata are stripped from the returned version.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "version - Base semantic-version string."
+            },
+            {
+              "tag": "@param",
+              "text": "bump - Version segment to increment."
+            },
+            {
+              "tag": "@returns",
+              "text": "Incremented semantic-version string."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If `version` is not valid SemVer."
+            }
+          ],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 242
+        },
+        {
+          "id": 242,
+          "name": "ParsedSemVer",
+          "kind": "type",
+          "summary": "Represent ParsedSemVer values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 39
+        },
+        {
+          "id": 241,
+          "name": "ParsedSemVerSchema",
+          "kind": "const",
+          "summary": "Define the ParsedSemVerSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 30
+        },
+        {
+          "id": 248,
+          "name": "parseSemVer",
+          "kind": "function",
+          "summary": "Parse a SemVer string into structured components.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "version - Candidate semantic-version string."
+            },
+            {
+              "tag": "@returns",
+              "text": "Parsed SemVer components."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If `version` is not valid SemVer."
+            }
+          ],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 126
+        },
+        {
+          "id": 252,
+          "name": "satisfiesRange",
+          "kind": "function",
+          "summary": "Check whether a version falls within an inclusive optional range.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "version - Version under test."
+            },
+            {
+              "tag": "@param",
+              "text": "minVersion - Optional inclusive lower bound."
+            },
+            {
+              "tag": "@param",
+              "text": "maxVersion - Optional inclusive upper bound."
+            },
+            {
+              "tag": "@returns",
+              "text": "`true` when the version satisfies the provided bounds."
+            },
+            {
+              "tag": "@throws",
+              "text": "`Error` If any provided version string is invalid."
+            }
+          ],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 267
+        },
+        {
+          "id": 244,
+          "name": "VersionChange",
+          "kind": "type",
+          "summary": "Represent VersionChange values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 70
+        },
+        {
+          "id": 243,
+          "name": "VersionChangeSchema",
+          "kind": "const",
+          "summary": "Define the VersionChangeSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 46
+        },
+        {
+          "id": 246,
+          "name": "VersionInfo",
+          "kind": "type",
+          "summary": "Represent VersionInfo values inferred from the schema layer.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 93
+        },
+        {
+          "id": 245,
+          "name": "VersionInfoSchema",
+          "kind": "const",
+          "summary": "Define the VersionInfoSchema validation schema.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 77
+        },
+        {
+          "id": 247,
+          "name": "VersionMixin",
+          "kind": "const",
+          "summary": "Use via Zod v4 spread syntax:\nconst MySchema = z.object({\n...VersionMixin.shape,\nid: UUIDSchema,\nname: z.string(),\n});",
+          "tags": [],
+          "sourcePath": "_specs/schemas/version-mixin.ts",
+          "line": 108
+        }
+      ]
+    },
+    {
+      "id": 267,
+      "name": "zod-ai-meta",
+      "summary": "update, and validate values for Zod schemas and compiled prompt outputs. How important is it that the agent gets this field right?",
+      "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+      "symbols": [
+        {
+          "id": 257,
+          "name": "AgentExample",
+          "kind": "interface",
+          "summary": "A positive or negative example.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 33
+        },
+        {
+          "id": 258,
+          "name": "AgentRelation",
+          "kind": "interface",
+          "summary": "A relationship to another schema the agent should be aware of.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 40
+        },
+        {
+          "id": 256,
+          "name": "AgentRule",
+          "kind": "interface",
+          "summary": "A single teaching rule for the agent.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 23
+        },
+        {
+          "id": 259,
+          "name": "AgentToolHint",
+          "kind": "interface",
+          "summary": "Tool or function the agent can call when working with this field.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 47
+        },
+        {
+          "id": 262,
+          "name": "ai",
+          "kind": "function",
+          "summary": "Start teaching an AI agent about a schema.\n```ts\nai(mySchema)\n.instruct(\"User's display name\")\n.generate(\"Use title case\")\n.example(\"Alice Johnson\")\n.antipattern(\"ALICE\", \"a.\")\n.priority(\"high\");\n```",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "schema - Zod schema to annotate with AI metadata."
+            },
+            {
+              "tag": "@returns",
+              "text": "Fluent metadata builder bound to `schema`."
+            }
+          ],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 335
+        },
+        {
+          "id": 261,
+          "name": "aiRegistry",
+          "kind": "const",
+          "summary": "Define the aiRegistry value.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 119
+        },
+        {
+          "id": 260,
+          "name": "AITeachingMeta",
+          "kind": "interface",
+          "summary": "The full AI teaching metadata for a single schema node.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 54
+        },
+        {
+          "id": 263,
+          "name": "CompiledField",
+          "kind": "interface",
+          "summary": "Compiled field instruction for prompt injection.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 344
+        },
+        {
+          "id": 264,
+          "name": "CompiledPrompt",
+          "kind": "interface",
+          "summary": "Full compiled output for a schema tree.",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 361
+        },
+        {
+          "id": 265,
+          "name": "compilePrompt",
+          "kind": "function",
+          "summary": "Walk a Zod object schema and collect all AI teaching metadata\ninto a structured format and a ready-to-use prompt string.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "schema - Root schema to compile."
+            },
+            {
+              "tag": "@param",
+              "text": "options - Optional scope and priority filters."
+            },
+            {
+              "tag": "@returns",
+              "text": "Structured compiled fields and prompt text."
+            }
+          ],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 376
+        },
+        {
+          "id": 266,
+          "name": "compileRegistry",
+          "kind": "function",
+          "summary": "Compile ALL schemas in the AI registry into a single prompt.\nUseful when you want to dump everything the agent needs to know.",
+          "tags": [
+            {
+              "tag": "@param",
+              "text": "options - Optional scope and priority filters."
+            },
+            {
+              "tag": "@returns",
+              "text": "Compiled prompt output for the full registry."
+            }
+          ],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 481
+        },
+        {
+          "id": 255,
+          "name": "OpScope",
+          "kind": "type",
+          "summary": "What kind of operation does a rule apply to?",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 20
+        },
+        {
+          "id": 254,
+          "name": "Priority",
+          "kind": "type",
+          "summary": "How important is it that the agent gets this field right?",
+          "tags": [],
+          "sourcePath": "_specs/schemas/zod-ai-meta.ts",
+          "line": 17
+        }
+      ]
+    }
+  ]
+}

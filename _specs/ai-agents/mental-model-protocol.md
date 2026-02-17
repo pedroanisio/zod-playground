@@ -3,7 +3,8 @@
 **Purpose:** How to produce a reviewable mental model before committing to a formal plan. The mental model makes the agent's understanding of scope, entities, and assumptions explicit so the human can verify it at 1/10th the cost of reviewing a full plan.
 
 Creates shared state between AI agents and humans
-Save to: _data/_shared/mental-model.json
+Save to: `_data/mental-models/mental-model.<timestamp>.json` (timestamp via `date -Ins`)
+Symlink: `_data/mental-models/mental-model.latest.json` → most recent file
 Not a plan—verification checkpoint only
 
 ---

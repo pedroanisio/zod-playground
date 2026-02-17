@@ -14,7 +14,7 @@ interface PipelineStage {
 }
 
 const DEFAULT_ACTION: PipelineAction = "generate";
-const SCRIPT = path.join(repoRoot, "docs", "_specs", "scripts");
+const SCRIPT = path.join(repoRoot, "_specs", "scripts");
 
 function isPipelineAction(input: string): input is PipelineAction {
   return ["extract", "render", "generate", "build", "serve"].includes(input);

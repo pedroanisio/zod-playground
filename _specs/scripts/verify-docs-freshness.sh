@@ -5,8 +5,8 @@ if [[ "${1:-}" != "--skip-generate" ]]; then
   npm run docs:generate
 fi
 
-if ! git diff --exit-code -- docs/generated/; then
-  echo "[ERROR] Generated docs are stale. Run npm run docs:generate and commit docs/generated changes."
+if ! git diff --exit-code -- generated/; then
+  echo "[ERROR] Generated docs are stale. Run npm run docs:generate and commit generated changes."
   exit 1
 fi
 

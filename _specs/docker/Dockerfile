@@ -20,9 +20,9 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN chmod +x docs/_specs/docker/entrypoint.sh \
-  && chmod +x docs/_specs/scripts/docker-docs-smoke.sh \
-  && chmod +x docs/_specs/scripts/verify-docs-freshness.sh
+RUN chmod +x _specs/docker/entrypoint.sh \
+  && chmod +x _specs/scripts/docker-docs-smoke.sh \
+  && chmod +x _specs/scripts/verify-docs-freshness.sh
 
-ENTRYPOINT ["docs/_specs/docker/entrypoint.sh"]
+ENTRYPOINT ["_specs/docker/entrypoint.sh"]
 CMD ["build"]
