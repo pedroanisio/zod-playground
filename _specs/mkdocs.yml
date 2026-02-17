@@ -4,7 +4,16 @@ site_url: ""
 docs_dir: ..
 site_dir: ../../site
 exclude_docs: |
+  index.html
   CLAUDE.md
+  AGENTS.md
+  PURPOSE.md
+  node_modules/**
+  src/**
+  public/**
+  tests/**
+  _data/**
+  .git/**
   _specs/**
   generated/schemas/README.md
 not_in_nav: |
@@ -48,5 +57,5 @@ markdown_extensions:
 extra_css:
   - stylesheets/extra.css
 nav:
-  - Home: index.md
+  - Home: README.md
   - Generated Schema Reference: generated/schemas/index.md

@@ -1,0 +1,779 @@
+{
+  "schemaVersion": "0.3.0",
+  "metadata": {
+    "planId": "plan.schema-visualization",
+    "version": "1.0.0",
+    "createdAt": "2026-02-17T19:00:00-03:00",
+    "updatedAt": "2026-02-17T19:00:00-03:00",
+    "authorId": "ai-agent",
+    "snapshotRef": "00713df20eafa55972897512a95a0685a0335491",
+    "branch": "main",
+    "supersedes": [],
+    "selfPath": "_data/plans/plan.schema-visualization.2026-02-17T19:00:00-03:00.json",
+    "versionHistory": []
+  },
+  "problem": {
+    "problemStatement": "The Zod playground has no visual representation of schema structure. Users write Zod schemas and test values but cannot see ER diagrams, class diagrams, or flowcharts of their schema relationships, making it harder to understand complex nested schemas at a glance.",
+    "affectedActors": [
+      "Zod playground users",
+      "Developers learning Zod schema patterns"
+    ],
+    "successOutcome": "Users can click a Diagram tab in the right panel to see a Mermaid-rendered ER diagram (default), class diagram, or flowchart of their Zod 4 schema, with diagram type switching, dark mode support, and copy-to-clipboard for the Mermaid markup.",
+    "costOfInaction": "Users continue relying on mental parsing of schema code to understand structure; the playground misses an opportunity to differentiate through visual tooling."
+  },
+  "baseline": {
+    "snapshotRef": "00713df20eafa55972897512a95a0685a0335491",
+    "metrics": [
+      {
+        "name": "buildStatus",
+        "baseline": 1,
+        "floor": 1,
+        "unit": "boolean"
+      },
+      {
+        "name": "e2eTestPassCount",
+        "baseline": 20,
+        "floor": 20,
+        "unit": "tests"
+      },
+      {
+        "name": "lintErrors",
+        "baseline": 0,
+        "floor": 0,
+        "unit": "count"
+      }
+    ],
+    "knownIssues": [
+      "No schema visualization exists — right panel only shows value validation"
+    ],
+    "invariants": [
+      "npm run build completes without errors",
+      "npm run test:e2e passes all existing tests",
+      "npm run biome:check reports zero errors"
+    ],
+    "healthCommands": [
+      "npm run build",
+      "npm run test:e2e",
+      "npm run biome:check"
+    ]
+  },
+  "resources": [
+    {
+      "id": "res-app-tsx",
+      "path": "src/App.tsx",
+      "estimatedTokens": 600,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-app-css",
+      "path": "src/App.module.css",
+      "estimatedTokens": 200,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-viz-hook",
+      "path": "src/features/SchemaVisualization/useSchemaVisualization.ts",
+      "estimatedTokens": 200,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-viz-component",
+      "path": "src/features/SchemaVisualization/SchemaVisualization.tsx",
+      "estimatedTokens": 300,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-viz-css",
+      "path": "src/features/SchemaVisualization/SchemaVisualization.module.css",
+      "estimatedTokens": 100,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-e2e-test",
+      "path": "tests/schemaVisualization.e2e.ts",
+      "estimatedTokens": 150,
+      "kind": "test-file"
+    },
+    {
+      "id": "res-zod-ts",
+      "path": "src/zod.ts",
+      "estimatedTokens": 300,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-value-editor",
+      "path": "src/features/ValueEditor/ValueEditor.tsx",
+      "estimatedTokens": 500,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-copy-button",
+      "path": "src/features/CopyButton.tsx",
+      "estimatedTokens": 150,
+      "kind": "source-file"
+    },
+    {
+      "id": "res-e2e-fixtures",
+      "path": "tests/fixtures.ts",
+      "estimatedTokens": 200,
+      "kind": "test-file"
+    }
+  ],
+  "scope": {
+    "inScope": [
+      {
+        "id": "zone-viz-feature",
+        "label": "Schema Visualization feature files",
+        "includes": ["src/features/SchemaVisualization/**"],
+        "excludes": []
+      },
+      {
+        "id": "zone-app-integration",
+        "label": "App shell integration (Tabs, layout)",
+        "includes": ["src/App.tsx", "src/App.module.css"],
+        "excludes": []
+      },
+      {
+        "id": "zone-e2e-tests",
+        "label": "E2E test files for schema visualization",
+        "includes": ["tests/schemaVisualization.e2e.ts"],
+        "excludes": []
+      }
+    ],
+    "nonScope": [
+      {
+        "id": "zone-existing-features",
+        "label": "Existing features (ValueEditor, VersionPicker, etc.)",
+        "includes": [
+          "src/features/ValueEditor/**",
+          "src/features/VersionPicker/**",
+          "src/features/ColorSchemeToggle.tsx",
+          "src/features/CopyButton.tsx"
+        ],
+        "excludes": []
+      },
+      {
+        "id": "zone-bundled-deps",
+        "label": "Bundled dependencies and build config",
+        "includes": ["package.json", "vite.config.*", "tsconfig.*"],
+        "excludes": []
+      }
+    ],
+    "nonScopeRationale": "Existing features are read-only references for pattern consistency. No new npm dependencies are added — zod-mermaid and mermaid load from CDN at runtime.",
+    "sharedSurfaces": [
+      {
+        "path": "src/App.tsx",
+        "reason": "App shell modified to add Tabs wrapping the right panel content",
+        "touchedBySteps": ["step-integration"]
+      },
+      {
+        "path": "src/App.module.css",
+        "reason": "App styles extended with .tabs/.tabPanel for Tabs layout",
+        "touchedBySteps": ["step-css"]
+      }
+    ]
+  },
+  "actors": [
+    {
+      "id": "human-operator",
+      "kind": "human",
+      "trustLevel": "operator",
+      "label": "Human developer/reviewer",
+      "gitAuthor": "Developer <dev@example.com>",
+      "authorizedZones": [
+        "zone-viz-feature",
+        "zone-app-integration",
+        "zone-e2e-tests"
+      ],
+      "lifespan": {
+        "kind": "unbounded",
+        "memoryDecayProfile": "moderate"
+      },
+      "tacitKnowledge": [
+        "Zod playground UX preferences",
+        "CDN reliability expectations"
+      ]
+    },
+    {
+      "id": "ai-agent",
+      "kind": "agent",
+      "trustLevel": "orchestrator",
+      "label": "AI coding agent (Claude)",
+      "gitAuthor": "Claude <noreply@anthropic.com>",
+      "authorizedZones": [
+        "zone-viz-feature",
+        "zone-app-integration",
+        "zone-e2e-tests"
+      ],
+      "contextCapacity": 200000,
+      "lifespan": {
+        "kind": "session-bounded"
+      },
+      "reproducibility": {
+        "modelVersion": "claude-opus-4-6"
+      },
+      "outputDivergence": 0.15,
+      "tacitKnowledge": []
+    }
+  ],
+  "concurrency": {
+    "mode": {
+      "mode": "sequential",
+      "executorId": "ai-agent"
+    },
+    "channels": [
+      {
+        "from": "ai-agent",
+        "to": "human-operator",
+        "channelType": "agent-output",
+        "carries": [
+          "code changes",
+          "test results",
+          "verification output"
+        ],
+        "bandwidth": {
+          "emit": "very-high",
+          "verify": "medium"
+        },
+        "onCriticalPath": true
+      },
+      {
+        "from": "human-operator",
+        "to": "ai-agent",
+        "channelType": "human-conversation",
+        "carries": [
+          "approval",
+          "feedback",
+          "course corrections"
+        ],
+        "bandwidth": {
+          "emit": "medium",
+          "verify": "high"
+        },
+        "onCriticalPath": true
+      }
+    ]
+  },
+  "verificationEconomics": {
+    "unit": "checks-per-hour",
+    "bwVerify": 10,
+    "bwDecl": 2,
+    "bwReview": 8,
+    "intentProjection": [
+      {
+        "id": "ic-build-passes",
+        "name": "Build remains green",
+        "temporalScope": { "kind": "all-steps" },
+        "modality": "structural",
+        "gradingKind": "boolean",
+        "predicateRef": "npm run build exits 0",
+        "declarationCost": 0
+      },
+      {
+        "id": "ic-e2e-pass",
+        "name": "All E2E tests pass",
+        "temporalScope": { "kind": "single-step", "stepId": "step-e2e" },
+        "modality": "structural",
+        "gradingKind": "boolean",
+        "predicateRef": "npm run test:e2e exits 0",
+        "declarationCost": 0
+      },
+      {
+        "id": "ic-no-bundle-regression",
+        "name": "No bundle size regression",
+        "temporalScope": { "kind": "all-steps" },
+        "modality": "mathematical",
+        "gradingKind": "boolean",
+        "predicateRef": "zod-mermaid and mermaid loaded from CDN only — npm run build output size unchanged",
+        "declarationCost": 1
+      },
+      {
+        "id": "ic-zod3-disabled",
+        "name": "Zod 3.x shows disabled state",
+        "temporalScope": {
+          "kind": "step-set",
+          "stepIds": ["step-component", "step-integration"]
+        },
+        "modality": "visual",
+        "gradingKind": "boolean",
+        "predicateRef": "Diagram tab disabled with tooltip or alert when Zod 3.x version is selected",
+        "declarationCost": 1
+      },
+      {
+        "id": "ic-lint-clean",
+        "name": "No lint errors introduced",
+        "temporalScope": { "kind": "all-steps" },
+        "modality": "structural",
+        "gradingKind": "boolean",
+        "predicateRef": "npm run biome:check exits 0",
+        "declarationCost": 0
+      }
+    ]
+  },
+  "steps": [
+    {
+      "id": "step-hook",
+      "title": "Create useSchemaVisualization hook",
+      "description": "Implement the core async hook that lazy-loads zod-mermaid and mermaid from CDN (cached after first load), debounces diagram generation (500ms), prevents stale renders via generation counter, and respects dark mode by re-initializing mermaid with theme:'dark' based on Mantine color scheme. Returns { svg, mermaidText, isLoading, error }.",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": [],
+      "scopeZones": ["zone-viz-feature"],
+      "fileChanges": [
+        {
+          "path": "src/features/SchemaVisualization/useSchemaVisualization.ts",
+          "action": "create",
+          "description": "Custom React hook (~80 lines): CDN lazy-loading of zod-mermaid + mermaid, debounced diagram generation, stale render prevention, dark mode support",
+          "resourceId": "res-viz-hook"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "src/features/SchemaVisualization/**",
+          "impactDescription": "New file — no existing code affected",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "TypeScript compilation",
+          "command": "npx tsc --noEmit",
+          "passCriteria": "Zero type errors",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Build succeeds",
+          "command": "npm run build",
+          "passCriteria": "Exit code 0, no warnings related to new file",
+          "blocking": true,
+          "verifiedBy": "automated"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git rm src/features/SchemaVisualization/useSchemaVisualization.ts"
+      },
+      "stopConditions": [
+        {
+          "trigger": "CDN URL for zod-mermaid +esm returns 404 or fails to resolve",
+          "action": "halt-and-escalate",
+          "escalateTo": "human-operator",
+          "maxRetries": 1,
+          "blindSpotRisk": "CDN availability is external — intermittent failures may not reproduce"
+        }
+      ],
+      "resourceRequirements": {
+        "simultaneousResources": ["res-zod-ts", "res-value-editor"],
+        "sequentialResources": ["res-copy-button"]
+      },
+      "commitTemplate": "feat(viz): add useSchemaVisualization hook with CDN lazy-loading",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-component",
+      "title": "Create SchemaVisualization component and CSS",
+      "description": "Build the SchemaVisualization React component (~120 lines) with SegmentedControl for diagram type selection (ER default | Class | Flowchart), CopyButton for Mermaid text, 'Requires Zod 4+' alert for isZod4=false, and SVG container with overflow scroll. Create companion CSS module following ValueEditor patterns.",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-hook"],
+      "scopeZones": ["zone-viz-feature"],
+      "fileChanges": [
+        {
+          "path": "src/features/SchemaVisualization/SchemaVisualization.tsx",
+          "action": "create",
+          "description": "React component (~120 lines): SegmentedControl for diagram types, CopyButton, Zod 4+ alert, SVG container",
+          "resourceId": "res-viz-component"
+        },
+        {
+          "path": "src/features/SchemaVisualization/SchemaVisualization.module.css",
+          "action": "create",
+          "description": "CSS module (~30 lines) following .valueTitle/.valueContainer patterns from ValueEditor",
+          "resourceId": "res-viz-css"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "src/features/SchemaVisualization/**",
+          "impactDescription": "New files — no existing code affected",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "TypeScript compilation",
+          "command": "npx tsc --noEmit",
+          "passCriteria": "Zero type errors",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Lint check",
+          "command": "npm run biome:check",
+          "passCriteria": "Zero lint errors in new files",
+          "blocking": true,
+          "verifiedBy": "automated"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git rm src/features/SchemaVisualization/SchemaVisualization.tsx src/features/SchemaVisualization/SchemaVisualization.module.css"
+      },
+      "resourceRequirements": {
+        "simultaneousResources": [
+          "res-viz-hook",
+          "res-value-editor",
+          "res-copy-button"
+        ],
+        "sequentialResources": []
+      },
+      "commitTemplate": "feat(viz): add SchemaVisualization component with diagram type switcher",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-integration",
+      "title": "Integrate SchemaVisualization into App.tsx with Tabs",
+      "description": "Wrap the right panel content in Mantine Tabs component with 'Values' (existing validation) and 'Diagram' tabs. Compute isZod4 via Number.parseInt(version.split('.')[0], 10) >= 4. Import and render SchemaVisualization in the Diagram tab panel. ~25 lines changed.",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-component"],
+      "scopeZones": ["zone-app-integration"],
+      "fileChanges": [
+        {
+          "path": "src/App.tsx",
+          "action": "modify",
+          "description": "Add Mantine Tabs wrapping right panel, isZod4 computation, SchemaVisualization import and render (~25 lines changed)",
+          "resourceId": "res-app-tsx"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "src/App.tsx",
+          "impactDescription": "Right panel structure changes — existing ValueEditor content moves into a Tab panel",
+          "dependencyKind": "static"
+        },
+        {
+          "path": "tests/app.e2e.ts",
+          "impactDescription": "Existing E2E tests may need adjustment if they rely on right panel DOM structure",
+          "dependencyKind": "runtime"
+        }
+      ],
+      "verification": [
+        {
+          "name": "Build succeeds",
+          "command": "npm run build",
+          "passCriteria": "Exit code 0",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Existing E2E tests still pass",
+          "command": "npm run test:e2e",
+          "passCriteria": "All pre-existing E2E tests pass (Values tab functionality preserved)",
+          "blocking": true,
+          "verifiedBy": "automated"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git checkout HEAD -- src/App.tsx"
+      },
+      "stopConditions": [
+        {
+          "trigger": "Existing E2E tests fail due to DOM structure changes from Tabs wrapping",
+          "action": "retry-once",
+          "maxRetries": 1,
+          "blindSpotRisk": "E2E selectors may depend on DOM nesting that changes with Tabs insertion"
+        }
+      ],
+      "resourceRequirements": {
+        "simultaneousResources": ["res-app-tsx", "res-viz-component"],
+        "sequentialResources": ["res-e2e-fixtures"]
+      },
+      "commitTemplate": "feat(viz): integrate SchemaVisualization into App with Tabs panel",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-css",
+      "title": "Add Tabs layout styles to App.module.css",
+      "description": "Add .tabs and .tabPanel CSS classes so Tabs.Panel fills available height using flex layout. Ensures the Diagram and Values panels grow to fill the right panel. ~15 lines added.",
+      "size": "XS",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-integration"],
+      "scopeZones": ["zone-app-integration"],
+      "fileChanges": [
+        {
+          "path": "src/App.module.css",
+          "action": "modify",
+          "description": "Add .tabs/.tabPanel flex layout styles (~15 lines)",
+          "resourceId": "res-app-css"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "src/App.module.css",
+          "impactDescription": "New CSS classes only — no existing class modifications",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "Build succeeds",
+          "command": "npm run build",
+          "passCriteria": "Exit code 0",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Visual check — layout fills panel",
+          "command": "npm run dev",
+          "passCriteria": "Tabs panel fills right column height; no overflow issues",
+          "blocking": false,
+          "verifiedBy": "human",
+          "detectsScope": "Layout rendering, flex overflow",
+          "cannotDetect": "Subtle rendering differences across browsers"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git checkout HEAD -- src/App.module.css"
+      },
+      "commitTemplate": "style(viz): add Tabs layout styles for right panel",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    },
+    {
+      "id": "step-e2e",
+      "title": "Add E2E tests for schema visualization",
+      "description": "Create Playwright E2E tests (~60 lines) covering: Diagram tab visible and click renders SVG, diagram type switching changes output, Zod 3.x shows 'Requires Zod 4+' message, Values tab still works after viewing diagram (regression test).",
+      "size": "S",
+      "assignedTo": "ai-agent",
+      "dependsOn": ["step-css"],
+      "scopeZones": ["zone-e2e-tests"],
+      "fileChanges": [
+        {
+          "path": "tests/schemaVisualization.e2e.ts",
+          "action": "create",
+          "description": "Playwright E2E tests (~60 lines): diagram tab renders SVG, type switching, Zod 3 disabled, Values tab regression",
+          "resourceId": "res-e2e-test"
+        }
+      ],
+      "blastRadius": [
+        {
+          "path": "tests/**",
+          "impactDescription": "New test file — no existing tests affected",
+          "dependencyKind": "static"
+        }
+      ],
+      "verification": [
+        {
+          "name": "New E2E tests pass",
+          "command": "npm run test:e2e",
+          "passCriteria": "All tests pass including new schemaVisualization tests",
+          "blocking": true,
+          "verifiedBy": "automated"
+        },
+        {
+          "name": "Lint check",
+          "command": "npm run biome:check",
+          "passCriteria": "Zero lint errors",
+          "blocking": true,
+          "verifiedBy": "automated"
+        }
+      ],
+      "reversibility": {
+        "kind": "reversible",
+        "rollbackProcedure": "git rm tests/schemaVisualization.e2e.ts"
+      },
+      "resourceRequirements": {
+        "simultaneousResources": ["res-e2e-fixtures", "res-e2e-test"],
+        "sequentialResources": []
+      },
+      "commitTemplate": "test(viz): add E2E tests for schema visualization feature",
+      "validationBudget": {
+        "valReq": 2,
+        "valDone": 0
+      }
+    }
+  ],
+  "executionOrder": {
+    "sequence": [
+      "step-hook",
+      "step-component",
+      "step-integration",
+      "step-css",
+      "step-e2e"
+    ],
+    "parallelizableGroups": []
+  },
+  "risks": [
+    {
+      "id": "risk-cdn-esm",
+      "description": "jsDelivr +esm transform may fail for zod-mermaid due to deep imports or CommonJS internals that don't transpile cleanly to ESM",
+      "severity": "medium",
+      "likelihood": "possible",
+      "affectedSteps": ["step-hook"],
+      "mitigation": "Test CDN URL manually before coding. Verify import resolves in browser devtools.",
+      "fallback": "Fall back to esm.sh CDN or bundle zod-mermaid as a last resort",
+      "ownerId": "ai-agent",
+      "relatedConstraint": "other"
+    },
+    {
+      "id": "risk-cross-zod",
+      "description": "Cross-Zod-version duck typing may break if zod-mermaid uses instanceof checks instead of property-based checks against CDN-loaded Zod schemas",
+      "severity": "low",
+      "likelihood": "unlikely",
+      "affectedSteps": ["step-hook", "step-component"],
+      "mitigation": "zod-mermaid uses .def.type property checks which are stable across Zod 4.x instances",
+      "ownerId": "ai-agent",
+      "relatedConstraint": "other"
+    },
+    {
+      "id": "risk-dark-mode",
+      "description": "Mermaid dark mode rendering may produce illegible diagrams if theme initialization doesn't propagate correctly",
+      "severity": "low",
+      "likelihood": "unlikely",
+      "affectedSteps": ["step-hook", "step-component"],
+      "mitigation": "Pass theme:'dark' to mermaid.initialize() based on Mantine useComputedColorScheme; re-render on scheme change",
+      "ownerId": "ai-agent",
+      "relatedConstraint": "other"
+    },
+    {
+      "id": "risk-large-schema",
+      "description": "Large schemas may produce unreadable diagrams that overflow the visible area",
+      "severity": "low",
+      "likelihood": "possible",
+      "affectedSteps": ["step-component"],
+      "mitigation": "SVG container with overflow:auto scroll. Future enhancement: add zoom/pan controls.",
+      "ownerId": "ai-agent",
+      "relatedConstraint": "other"
+    },
+    {
+      "id": "risk-primitive-schema",
+      "description": "Primitive schemas (e.g. z.string()) produce trivial or empty diagrams that may confuse users",
+      "severity": "low",
+      "likelihood": "possible",
+      "affectedSteps": ["step-component"],
+      "mitigation": "Show informational message for non-object schemas explaining that diagrams work best with object/record schemas",
+      "ownerId": "ai-agent",
+      "relatedConstraint": "other"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "dec-cdn-import",
+      "timestamp": "2026-02-17T19:00:00-03:00",
+      "decidedBy": "human-operator",
+      "title": "Load zod-mermaid and mermaid from CDN at runtime",
+      "chosen": "CDN dynamic import via jsDelivr — both zod-mermaid and mermaid loaded at runtime, not bundled. This avoids cross-instance Zod instanceof failures and keeps the app bundle unchanged (~2MB mermaid stays out of bundle).",
+      "alternatives": [
+        {
+          "option": "Bundle zod-mermaid and mermaid as npm dependencies",
+          "rejectionReason": "zod-mermaid imports zod internally — bundled copy gets its own Zod instance, causing instanceof check failures against CDN-loaded schemas. Also adds ~2MB to bundle."
+        },
+        {
+          "option": "Bundle zod-mermaid only, load mermaid from CDN",
+          "rejectionReason": "Still has the cross-instance Zod problem for zod-mermaid's internal zod import."
+        }
+      ],
+      "reversible": true,
+      "affectedSteps": ["step-hook", "step-component", "step-integration"]
+    },
+    {
+      "id": "dec-tab-ux",
+      "timestamp": "2026-02-17T19:00:00-03:00",
+      "decidedBy": "human-operator",
+      "title": "Use Tabs in right panel instead of third panel",
+      "chosen": "Mantine Tabs component in the right panel toggles between Values and Diagram views. Minimal layout change; two-panel structure preserved.",
+      "alternatives": [
+        {
+          "option": "Three-panel layout (editor | values | diagram)",
+          "rejectionReason": "Would crowd screens — each panel gets ~440px on 1440px. Users rarely need values and diagram simultaneously."
+        },
+        {
+          "option": "Modal/drawer overlay for diagram",
+          "rejectionReason": "Breaks the side-by-side editing workflow. Diagram should feel integrated, not secondary."
+        }
+      ],
+      "reversible": true,
+      "affectedSteps": ["step-integration", "step-css"]
+    }
+  ],
+  "dataSyncRules": {
+    "syncRules": []
+  },
+  "acceptanceCriteria": [
+    {
+      "description": "Diagram tab is visible in the right panel and clicking it renders an SVG ER diagram for a Zod 4 object schema",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "E2E test for diagram tab rendering passes"
+    },
+    {
+      "description": "Diagram type switching (ER / Class / Flowchart) via SegmentedControl changes the rendered output",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "E2E test for diagram type switching passes"
+    },
+    {
+      "description": "Selecting a Zod 3.x version shows 'Requires Zod 4+' message instead of a diagram",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "E2E test for Zod 3 disabled state passes"
+    },
+    {
+      "description": "Values tab continues to work correctly after viewing and switching back from diagram tab",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "E2E regression test for Values tab passes"
+    },
+    {
+      "description": "No bundle size regression — zod-mermaid and mermaid are loaded from CDN only",
+      "verificationCommand": "npm run build",
+      "passCriteria": "Build output size unchanged from baseline"
+    },
+    {
+      "description": "All existing E2E tests continue to pass after integration",
+      "verificationCommand": "npm run test:e2e",
+      "passCriteria": "Full E2E suite passes with zero failures"
+    },
+    {
+      "description": "No lint errors introduced by new or modified files",
+      "verificationCommand": "npm run biome:check",
+      "passCriteria": "Exit code 0 with zero reported errors"
+    }
+  ],
+  "mergeStrategy": {
+    "targetBranch": "main",
+    "method": "squash",
+    "requiredGates": ["build", "test:e2e", "biome:check"],
+    "approvers": ["human-operator"]
+  },
+  "futureWork": [
+    {
+      "title": "Zoom and pan controls for large diagrams",
+      "description": "Add zoom/pan interaction to the SVG container for complex schemas that produce large, multi-entity diagrams. Consider panzoom library or CSS transform-based approach.",
+      "dependsOnDecisions": [],
+      "targetPhase": "post-v1"
+    },
+    {
+      "title": "Diagram export (PNG/SVG download)",
+      "description": "Allow users to export the rendered diagram as PNG or SVG file for documentation or sharing purposes.",
+      "dependsOnDecisions": [],
+      "targetPhase": "post-v1"
+    },
+    {
+      "title": "Schema diff visualization",
+      "description": "Show visual diff between two schema versions by comparing their Mermaid diagram outputs. Depends on version history or multi-schema support.",
+      "dependsOnDecisions": [],
+      "targetPhase": "future"
+    }
+  ]
+}
