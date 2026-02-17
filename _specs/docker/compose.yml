@@ -1,5 +1,6 @@
 services:
   docs-build:
+    profiles: ["build"]
     build:
       context: ../..
       dockerfile: _specs/docker/Dockerfile
