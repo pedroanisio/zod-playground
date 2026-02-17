@@ -1,0 +1,1 @@
+create or update an mental model for this codebase, follow the mental model protocol

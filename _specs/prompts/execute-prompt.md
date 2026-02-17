@@ -1,0 +1,1 @@
+based on _specs/schemas/prompt-schema.ts, read th prompt json file informed by the user and proceed with the execution of this tasks with sub-agents

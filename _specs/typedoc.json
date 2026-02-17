@@ -1,0 +1,20 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "../_specs/schemas"
+  ],
+  "entryPointStrategy": "expand",
+  "tsconfig": "./tsconfig.docs.json",
+  "readme": "none",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "skipErrorChecking": true,
+  "plugin": [
+    "typedoc-plugin-zod"
+  ],
+  "sort": [
+    "source-order",
+    "alphabetical"
+  ]
+}
