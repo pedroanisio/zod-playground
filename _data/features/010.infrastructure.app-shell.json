@@ -1,0 +1,132 @@
+{
+  "id": "00112233-4455-4667-7889-a0b1c2d3e4f5",
+  "key": "infrastructure.app-shell",
+  "name": "Application Shell",
+  "description": "Root React component, Mantine provider setup, CSS entry point, and Vite environment declarations. Orchestrates all features, UI components, and hooks into the rendered application.",
+  "order": 10,
+  "status": "in_development",
+  "category": "infrastructure",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "11223344-5566-4778-89a0-b1c2d3e4f5a6",
+      "path": "src/App.tsx",
+      "language": "typescript",
+      "order": 0
+    },
+    {
+      "id": "22334455-6677-4889-a0b1-c2d3e4f5a6b7",
+      "path": "src/main.tsx",
+      "language": "typescript",
+      "order": 1
+    }
+  ],
+  "files": [
+    {
+      "id": "33445566-7788-49a0-b1c2-d3e4f5a6b7c8",
+      "path": "src/App.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "entry_point",
+      "order": 0
+    },
+    {
+      "id": "44556677-8899-4a0b-1c2d-3e4f5a6b7c8d",
+      "path": "src/main.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "entry_point",
+      "order": 1
+    },
+    {
+      "id": "55667788-99a0-4b1c-2d3e-4f5a6b7c8d9e",
+      "path": "src/App.module.css",
+      "language": "css",
+      "source": "manual",
+      "role": "implementation",
+      "order": 2
+    },
+    {
+      "id": "66778899-a0b1-4c2d-3e4f-5a6b7c8d9e0f",
+      "path": "src/main.css",
+      "language": "css",
+      "source": "manual",
+      "role": "implementation",
+      "order": 3
+    },
+    {
+      "id": "778899a0-b1c2-4d3e-4f5a-6b7c8d9e0f10",
+      "path": "src/vite-env.d.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "types",
+      "order": 4
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "8899a0b1-c2d3-4e4f-5a6b-7c8d9e0f1021",
+      "featureKey": "core.zod-runtime",
+      "type": "required",
+      "order": 0
+    },
+    {
+      "id": "99a0b1c2-d3e4-4f5a-6b7c-8d9e0f102132",
+      "featureKey": "infrastructure.constants",
+      "type": "required",
+      "order": 1
+    },
+    {
+      "id": "a0b1c2d3-e4f5-4a6b-7c8d-9e0f10213243",
+      "featureKey": "core.app-data",
+      "type": "required",
+      "order": 2
+    },
+    {
+      "id": "b1c2d3e4-f5a6-4b7c-8d9e-0f1021324354",
+      "featureKey": "features.color-scheme-toggle",
+      "type": "required",
+      "order": 3
+    },
+    {
+      "id": "c2d3e4f5-a6b7-4c8d-9e0f-102132435465",
+      "featureKey": "features.copy-button",
+      "type": "required",
+      "order": 4
+    },
+    {
+      "id": "d3e4f5a6-b7c8-4d9e-0f10-213243546576",
+      "featureKey": "features.value-editor",
+      "type": "required",
+      "order": 5
+    },
+    {
+      "id": "e4f5a6b7-c8d9-4e0f-1021-324354657687",
+      "featureKey": "features.version-picker",
+      "type": "required",
+      "order": 6
+    },
+    {
+      "id": "f5a6b7c8-d9e0-4f10-2132-435465768798",
+      "featureKey": "ui.header",
+      "type": "required",
+      "order": 7
+    },
+    {
+      "id": "a6b7c8d9-e0f1-4021-3243-5465768798a9",
+      "featureKey": "ui.resizable",
+      "type": "required",
+      "order": 8
+    },
+    {
+      "id": "b7c8d9e0-f102-4132-4354-65768798a9ba",
+      "featureKey": "utils.monaco",
+      "type": "required",
+      "order": 9
+    }
+  ],
+  "tags": ["infrastructure", "app", "shell"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

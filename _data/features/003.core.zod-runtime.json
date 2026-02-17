@@ -1,0 +1,78 @@
+{
+  "id": "f2a3b4c5-d6e7-4f80-91a2-b3c4d5e6f7a8",
+  "key": "core.zod-runtime",
+  "name": "Zod Runtime Engine",
+  "description": "Dynamic Zod version loading from CDN, schema transpilation via TypeScript, and safeParse-based validation. Serves as the core evaluation engine that all schema and value validation flows through.",
+  "order": 3,
+  "status": "ga",
+  "category": "core",
+  "introducedAt": "2026-02-17",
+  "gaAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "a3b4c5d6-e7f8-4091-a2b3-c4d5e6f7a8b9",
+      "path": "src/zod.ts",
+      "language": "typescript",
+      "order": 0
+    },
+    {
+      "id": "b4c5d6e7-f809-41a2-b3c4-d5e6f7a8b9c0",
+      "path": "src/packageMetadata.ts",
+      "language": "typescript",
+      "order": 1
+    },
+    {
+      "id": "c5d6e7f8-091a-42b3-c4d5-e6f7a8b9c0d1",
+      "path": "src/versionMetadata.ts",
+      "language": "typescript",
+      "order": 2
+    }
+  ],
+  "files": [
+    {
+      "id": "d6e7f809-1a2b-43c4-d5e6-f7a8b9c0d1e2",
+      "path": "src/zod.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "entry_point",
+      "order": 0
+    },
+    {
+      "id": "e7f8091a-2b3c-44d5-e6f7-a8b9c0d1e2f3",
+      "path": "src/packageMetadata.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 1
+    },
+    {
+      "id": "f8091a2b-3c4d-45e6-f7a8-b9c0d1e2f3a4",
+      "path": "src/versionMetadata.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 2
+    },
+    {
+      "id": "091a2b3c-4d5e-46f7-a8b9-c0d1e2f3a4b5",
+      "path": "tests/zod.unit.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "test",
+      "order": 3
+    },
+    {
+      "id": "1a2b3c4d-5e6f-47a8-b9c0-d1e2f3a4b5c6",
+      "path": "tests/zod.perf.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "test",
+      "order": 4
+    }
+  ],
+  "dependencies": [],
+  "tags": ["core", "zod", "runtime"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

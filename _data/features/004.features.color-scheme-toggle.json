@@ -1,0 +1,33 @@
+{
+  "id": "2a3b4c5d-6e7f-4809-1a2b-3c4d5e6f7a8b",
+  "key": "features.color-scheme-toggle",
+  "name": "Color Scheme Toggle",
+  "description": "Dark/light mode toggle button using Mantine's useMantineColorScheme hook. Gives users control over the visual theme for comfortable editing in any lighting condition.",
+  "order": 4,
+  "status": "in_development",
+  "category": "features",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "3b4c5d6e-7f80-491a-2b3c-4d5e6f7a8b9c",
+      "path": "src/features/ColorSchemeToggle.tsx",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "4c5d6e7f-8091-4a2b-3c4d-5e6f7a8b9c0d",
+      "path": "src/features/ColorSchemeToggle.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    }
+  ],
+  "dependencies": [],
+  "tags": ["features", "color", "scheme", "toggle"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "5d6e7f80-91a2-4b3c-4d5e-6f7a8b9c0d1e",
+  "key": "features.copy-button",
+  "name": "Copy Button",
+  "description": "Clipboard copy action button with visual feedback via Mantine notifications. Provides a reusable one-click copy pattern consumed by the share and editor workflows.",
+  "order": 5,
+  "status": "in_development",
+  "category": "features",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "6e7f8091-a2b3-4c4d-5e6f-7a8b9c0d1e2f",
+      "path": "src/features/CopyButton.tsx",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "7f8091a2-b3c4-4d5e-6f7a-8b9c0d1e2f3a",
+      "path": "src/features/CopyButton.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    }
+  ],
+  "dependencies": [],
+  "tags": ["features", "copy", "button"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

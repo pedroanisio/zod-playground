@@ -1,0 +1,54 @@
+{
+  "id": "a4b5c6d7-e8f9-4001-1223-344556677889",
+  "key": "features.value-editor",
+  "name": "Value Editor",
+  "description": "Monaco-powered editor panel for entering test values with real-time Zod validation feedback and result display. Provides the primary interaction surface where users observe schema validation outcomes.",
+  "order": 9,
+  "status": "in_development",
+  "category": "features",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "b5c6d7e8-f900-4112-2334-4556677889a0",
+      "path": "src/features/ValueEditor/**",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "c6d7e8f9-0011-4223-3445-56677889a0b1",
+      "path": "src/features/ValueEditor/ValueEditor.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    },
+    {
+      "id": "d7e8f900-1122-4334-4556-77889a0b1c2d",
+      "path": "src/features/ValueEditor/ValueEditor.module.css",
+      "language": "css",
+      "source": "manual",
+      "role": "implementation",
+      "order": 1
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "e8f90011-2233-4445-5667-7889a0b1c2d3",
+      "featureKey": "core.zod-runtime",
+      "type": "required",
+      "order": 0
+    },
+    {
+      "id": "f9001122-3344-4556-6778-89a0b1c2d3e4",
+      "featureKey": "features.copy-button",
+      "type": "required",
+      "order": 1
+    }
+  ],
+  "tags": ["features", "value", "editor"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

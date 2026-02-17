@@ -1,0 +1,40 @@
+{
+  "id": "8091a2b3-c4d5-4e6f-7a8b-9c0d1e2f3a4b",
+  "key": "infrastructure.constants",
+  "name": "Application Constants",
+  "description": "Shared editor configuration, default app data, and storage keys used across the application. Establishes the baseline defaults that persistence and editor components build upon.",
+  "order": 6,
+  "status": "in_development",
+  "category": "infrastructure",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "91a2b3c4-d5e6-4f7a-8b9c-0d1e2f3a4b5c",
+      "path": "src/constants.ts",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "a2b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d",
+      "path": "src/constants.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "b3c4d5e6-f7a8-4b9c-0d1e-2f3a4b5c6d7e",
+      "featureKey": "core.zod-runtime",
+      "type": "required",
+      "order": 0
+    }
+  ],
+  "tags": ["infrastructure", "constants"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

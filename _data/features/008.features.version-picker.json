@@ -1,0 +1,40 @@
+{
+  "id": "c0d1e2f3-a4b5-4c6d-7e8f-900112233445",
+  "key": "features.version-picker",
+  "name": "Version Picker",
+  "description": "Dropdown selector for switching between Zod library versions with zod-mini detection. Allows users to test schemas against any published Zod release without local installation.",
+  "order": 8,
+  "status": "in_development",
+  "category": "features",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "d1e2f3a4-b5c6-4d7e-8f90-011223344556",
+      "path": "src/features/VersionPicker/**",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "e2f3a4b5-c6d7-4e8f-9001-122334455667",
+      "path": "src/features/VersionPicker/VersionPicker.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "f3a4b5c6-d7e8-4f90-0112-233445566778",
+      "featureKey": "core.zod-runtime",
+      "type": "required",
+      "order": 0
+    }
+  ],
+  "tags": ["features", "version", "picker"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

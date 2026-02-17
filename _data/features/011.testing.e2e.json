@@ -1,0 +1,49 @@
+{
+  "id": "c8d9e0f1-0213-4243-5465-768798a9bacb",
+  "key": "testing.e2e",
+  "name": "End-to-End Tests",
+  "description": "Playwright-based browser tests covering schema validation, version switching, and sharing workflows. Validates the full user journey from editor input to validation output across real browser engines.",
+  "order": 11,
+  "status": "ga",
+  "category": "testing",
+  "introducedAt": "2026-02-17",
+  "gaAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "d9e0f102-1324-4354-6576-8798a9bacbdc",
+      "path": "tests/**",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "e0f10213-2435-4465-7687-98a9bacbdced",
+      "path": "tests/fixtures.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "helper",
+      "order": 0
+    },
+    {
+      "id": "f1021324-3546-4576-8798-a9bacbdcedfe",
+      "path": "tests/app.e2e.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "test",
+      "order": 1
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "10213243-5465-4687-98a9-bacbdcedfe0f",
+      "featureKey": "core.zod-runtime",
+      "type": "required",
+      "order": 0
+    }
+  ],
+  "tags": ["testing", "e2e", "playwright"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

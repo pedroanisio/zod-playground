@@ -1,0 +1,41 @@
+{
+  "id": "e5f6a7b8-c9d0-4e1f-2a3b-4c5d6e7f8091",
+  "key": "ui.resizable",
+  "name": "Resizable Panels",
+  "description": "Drag-to-resize panel layout wrapping react-resizable-panels with a styled handle. Enables the side-by-side schema editor and validation output arrangement.",
+  "order": 1,
+  "status": "in_development",
+  "category": "ui",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "f6a7b8c9-d0e1-4f2a-3b4c-5d6e7f8091a2",
+      "path": "src/ui/Resizable/**",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "a7b8c9d0-e1f2-4a3b-4c5d-6e7f8091a2b3",
+      "path": "src/ui/Resizable/resizable.tsx",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    },
+    {
+      "id": "b8c9d0e1-f2a3-4b4c-5d6e-7f8091a2b3c4",
+      "path": "src/ui/Resizable/Resizable.module.css",
+      "language": "css",
+      "source": "manual",
+      "role": "implementation",
+      "order": 1
+    }
+  ],
+  "dependencies": [],
+  "tags": ["ui", "resizable"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

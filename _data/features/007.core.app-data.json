@@ -1,0 +1,54 @@
+{
+  "id": "c4d5e6f7-a8b9-4c0d-1e2f-3a4b5c6d7e8f",
+  "key": "core.app-data",
+  "name": "App Data Persistence",
+  "description": "Serialization, deserialization, and URL-based sharing of app state using lz-string compression with a React hook for auto-save. Ensures schema and value state survives page reloads and enables link-based collaboration.",
+  "order": 7,
+  "status": "in_development",
+  "category": "core",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "d5e6f7a8-b9c0-4d1e-2f3a-4b5c6d7e8f90",
+      "path": "src/utils/appData.ts",
+      "language": "typescript",
+      "order": 0
+    },
+    {
+      "id": "e6f7a8b9-c0d1-4e2f-3a4b-5c6d7e8f9001",
+      "path": "src/hooks/usePersistAppData.ts",
+      "language": "typescript",
+      "order": 1
+    }
+  ],
+  "files": [
+    {
+      "id": "f7a8b9c0-d1e2-4f3a-4b5c-6d7e8f900112",
+      "path": "src/utils/appData.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    },
+    {
+      "id": "a8b9c0d1-e2f3-4a4b-5c6d-7e8f90011223",
+      "path": "src/hooks/usePersistAppData.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 1
+    }
+  ],
+  "dependencies": [
+    {
+      "id": "b9c0d1e2-f3a4-4b5c-6d7e-8f9001122334",
+      "featureKey": "infrastructure.constants",
+      "type": "required",
+      "order": 0
+    }
+  ],
+  "tags": ["core", "app", "data", "persistence"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}

@@ -1,0 +1,33 @@
+{
+  "id": "c9d0e1f2-a3b4-4c5d-6e7f-8091a2b3c4d5",
+  "key": "utils.monaco",
+  "name": "Monaco Editor Setup",
+  "description": "Configuration and initialization of the Monaco code editor instance via @monaco-editor/react. Centralizes editor loader settings so consumers get a pre-configured editing surface.",
+  "order": 2,
+  "status": "in_development",
+  "category": "utils",
+  "introducedAt": "2026-02-17",
+  "isPublic": true,
+  "modules": [
+    {
+      "id": "d0e1f2a3-b4c5-4d6e-7f80-91a2b3c4d5e6",
+      "path": "src/utils/monaco.ts",
+      "language": "typescript",
+      "order": 0
+    }
+  ],
+  "files": [
+    {
+      "id": "e1f2a3b4-c5d6-4e7f-8091-a2b3c4d5e6f7",
+      "path": "src/utils/monaco.ts",
+      "language": "typescript",
+      "source": "manual",
+      "role": "implementation",
+      "order": 0
+    }
+  ],
+  "dependencies": [],
+  "tags": ["utils", "monaco"],
+  "createdAt": "2026-02-17T00:00:00Z",
+  "updatedAt": "2026-02-17T00:00:00Z"
+}
