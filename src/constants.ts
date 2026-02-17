@@ -24,7 +24,23 @@ const schema = `z.object({
 
 const values = ['{name: "John"}']
 
-const version = (await zod.getVersions('latest'))[0].version
+const FALLBACK_ZOD_VERSION = '4.0.0'
+const DEFAULT_VERSION_TIMEOUT_MS = 2000
+
+async function getDefaultVersion(): Promise<string> {
+  try {
+    const versionPromise = zod.getVersions('latest').then((versions) => versions[0]?.version)
+    const timeoutPromise = new Promise<undefined>((resolve) => {
+      setTimeout(() => resolve(undefined), DEFAULT_VERSION_TIMEOUT_MS)
+    })
+    const version = await Promise.race([versionPromise, timeoutPromise])
+    return version ?? FALLBACK_ZOD_VERSION
+  } catch {
+    return FALLBACK_ZOD_VERSION
+  }
+}
+
+const version = await getDefaultVersion()
 
 export const DEFAULT_APP_DATA = {
   schema,

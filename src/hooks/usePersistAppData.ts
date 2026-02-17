@@ -10,6 +10,10 @@ export function usePersistAppData(data: AppData) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     }
 
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current)
+    }
+
     timeoutRef.current = setTimeout(() => {
       saveData()
     }, 1000)
@@ -20,7 +24,9 @@ export function usePersistAppData(data: AppData) {
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
       }
+      window.removeEventListener('beforeunload', saveData)
     }
   }, [data])
 }

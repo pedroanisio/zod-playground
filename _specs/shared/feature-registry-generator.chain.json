@@ -1,0 +1,516 @@
+{
+  "schemaVersion": "0.3.0",
+  "id": "feature-registry-generator-v1",
+  "name": "Feature Registry Generator",
+  "version": "1.1.0",
+  "description": "Inspects any codebase — regardless of language, framework, or stack — and generates feature JSON files conforming to the FeatureSchema specification. Decomposes a source tree into cohesive functional units with files, dependencies, status, and derived metadata.",
+  "tags": [
+    "feature-registry",
+    "codebase-analysis",
+    "code-mapping",
+    "multi-language",
+    "schema-generation"
+  ],
+
+  "orchestration": {
+    "strategy": "chain",
+    "steps": [
+      {
+        "id": "survey",
+        "description": "Survey codebase structure: identify languages, test conventions, source roots, and candidate feature boundaries. Output binding: the JSON object inside <survey> tags becomes the surveyResults variable for the decompose step.",
+        "orchestration": {
+          "strategy": "single",
+          "call": {
+            "system": {
+              "role": {
+                "persona": "Senior software architect specializing in codebase decomposition and feature mapping",
+                "expertise": [
+                  "Multi-language project analysis",
+                  "Modular architecture",
+                  "Dependency graph construction",
+                  "Test convention detection"
+                ],
+                "constraints": [
+                  "Do not invent files — only reference paths present in the source tree",
+                  "Do not assume language conventions — detect them from the actual file listing and manifest",
+                  "Report uncertainty when a directory's purpose is ambiguous"
+                ],
+                "tone": "analytical and precise"
+              },
+              "instructions": "You are analyzing a codebase to prepare for feature registry generation.\n\nYour job is to produce a structured survey of the project. Do the following:\n\n1. IDENTIFY THE PRIMARY LANGUAGE(S) from file extensions in the source tree and the package manifest.\n\n2. IDENTIFY THE SOURCE ROOT — the top-level directory containing production source code (e.g., `src/`, `lib/`, `app/`, `internal/`, `pkg/`, or the project root itself).\n\n3. DETECT THE TEST CONVENTION by examining the source tree for patterns:\n   - Separate test directories: `__tests__/`, `tests/`, `test/`, `spec/`, `src/test/`\n   - Co-located tests: `*.test.*`, `*_test.*`, `*_spec.*`, `*Test.*`\n   - Inline tests: `#[cfg(test)]` (Rust)\n\n4. IDENTIFY CANDIDATE FEATURES by walking the directory tree. Each meaningful directory (or directory subtree) is a candidate. Apply these rules:\n   - A directory with 1+ implementation files = one candidate feature\n   - Nested directories that represent sub-modules = separate features with dotted keys\n   - Flat files at the source root = group by semantic similarity into infrastructure/shared features\n   - Ignore build artifacts, dependency caches, VCS directories, and generated files\n\n5. For each candidate, produce:\n   - A proposed dotted key (lowercase, dots for hierarchy, hyphens within segments)\n   - The directory path it maps to\n   - The count of implementation files and test files\n   - A one-line purpose hypothesis based on directory/file names\n\nOutput your survey inside <survey> tags as a JSON object.",
+              "xmlTags": [
+                {
+                  "tag": "source-tree",
+                  "purpose": "Contains the recursive file listing of the codebase"
+                },
+                {
+                  "tag": "manifest",
+                  "purpose": "Contains the package manifest file contents (package.json, Cargo.toml, etc.)"
+                },
+                {
+                  "tag": "readme",
+                  "purpose": "Contains the project README or purpose documentation"
+                },
+                {
+                  "tag": "survey",
+                  "purpose": "Contains the structured survey output as JSON"
+                }
+              ]
+            },
+
+            "userTemplate": "<source-tree>\n{{sourceTree}}\n</source-tree>\n\n<manifest>\n{{packageManifest}}\n</manifest>\n\n<readme>\n{{readmeContent}}\n</readme>",
+
+            "variables": {
+              "sourceTree": {
+                "type": "string",
+                "description": "Recursive file listing of the codebase, excluding node_modules/, target/, __pycache__/, venv/, .git/, dist/, build/, bin/, obj/, and other build artifacts. One file path per line, relative from repo root.",
+                "required": true
+              },
+              "packageManifest": {
+                "type": "string",
+                "description": "Contents of the project's package manifest: package.json (JS/TS), Cargo.toml (Rust), go.mod (Go), pyproject.toml (Python), pom.xml (Java), *.csproj (C#), Gemfile (Ruby), or equivalent.",
+                "required": true
+              },
+              "readmeContent": {
+                "type": "string",
+                "description": "Contents of the project's README.md, PURPOSE.md, or equivalent documentation describing the project's intent and structure. Empty string if none exists.",
+                "required": true
+              }
+            },
+
+            "outputFormat": {
+              "type": "json",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "primaryLanguages": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Detected primary programming languages"
+                  },
+                  "sourceRoot": {
+                    "type": "string",
+                    "description": "Path to the main source directory"
+                  },
+                  "testConvention": {
+                    "type": "object",
+                    "properties": {
+                      "pattern": { "type": "string" },
+                      "location": { "type": "string", "enum": ["separate", "co-located", "inline", "mixed"] }
+                    }
+                  },
+                  "exclusions": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Directories/patterns excluded from analysis (build artifacts, dependency caches, VCS directories)"
+                  },
+                  "candidates": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "proposedKey": { "type": "string" },
+                        "directory": { "type": "string" },
+                        "implementationFileCount": { "type": "number" },
+                        "testFileCount": { "type": "number" },
+                        "purposeHypothesis": { "type": "string" }
+                      },
+                      "required": ["proposedKey", "directory", "implementationFileCount", "purposeHypothesis"]
+                    }
+                  }
+                },
+                "required": ["primaryLanguages", "sourceRoot", "testConvention", "candidates"]
+              },
+              "constraints": [
+                "Wrap the output JSON object in <survey> tags — the tags are extraction delimiters, the content between them must be valid standalone JSON",
+                "List all excluded directories/patterns in the exclusions array (build artifacts, dependency caches, VCS directories, generated files)",
+                "Do not include files from excluded directories in candidates",
+                "Every proposedKey must match the regex /^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$/"
+              ]
+            },
+
+            "techniques": [
+              {
+                "technique": "chain_of_thought",
+                "variant": "zero_shot",
+                "triggerPhrase": "Let me systematically walk through the source tree to identify the project structure.",
+                "thinkingTag": "analysis"
+              }
+            ],
+
+            "prefill": "<analysis>\n",
+
+            "modelParams": {
+              "model": "claude-opus-4-6",
+              "temperature": 0.1,
+              "maxTokens": 8192,
+              "thinking": { "type": "enabled", "budgetTokens": 4096 }
+            }
+          }
+        }
+      },
+
+      {
+        "id": "decompose",
+        "description": "Decompose candidate features into detailed definitions: files, dependencies, descriptions, status, and modules. Input binding: surveyResults = extract JSON from <survey> tags in survey step output; sourceTree = original input (pass-through, needed for import tracing and file-to-feature mapping); featureSchema = static schema spec. Output binding: the JSON array inside <features> tags becomes the decomposedFeatures variable for the generate step.",
+        "inputFrom": ["survey"],
+        "orchestration": {
+          "strategy": "single",
+          "call": {
+            "system": {
+              "role": {
+                "persona": "Software architect specializing in modular decomposition and dependency analysis",
+                "expertise": [
+                  "Import graph analysis across multiple languages",
+                  "Feature cohesion and coupling metrics",
+                  "Domain-driven design bounded contexts",
+                  "Technical writing for feature descriptions"
+                ],
+                "constraints": [
+                  "NEVER invent file paths — only use paths from the source tree",
+                  "NEVER invent feature keys — only use keys from the survey or split/merge them with justification",
+                  "Each file must belong to exactly ONE feature",
+                  "Dependencies must be DIRECT (not transitive) and based on actual import statements",
+                  "Test-only imports do NOT create feature dependencies",
+                  "Descriptions must follow the two-part structure: WHAT it does + WHY it matters / architectural role"
+                ],
+                "tone": "precise and systematic"
+              },
+              "instructions": "You are decomposing a codebase into features for a Feature Registry.\n\nYou receive:\n- The survey results from the previous step (candidate features with directories and file counts)\n- The full source tree for file-level analysis\n- The FeatureSchema specification that defines the target JSON structure\n\nFor each candidate feature from the survey, do the following:\n\n1. VALIDATE COHESION: Read the file names in the candidate's directory. Do they share a common concern? If not, SPLIT into multiple features. If two candidates are tightly coupled (shared types, always imported together), MERGE them.\n\n2. MAP FILES: For each feature, list every file that belongs to it:\n   - Implementation files: role = \"implementation\" or \"entry_point\" (for index/mod/init files)\n   - Test files: role = \"test\"\n   - Type-only files: role = \"types\"\n   - Config files: role = \"config\"\n   - Migration files: role = \"migration\"\n   - Documentation: role = \"documentation\"\n   - Helpers: role = \"helper\"\n   Order: implementation files first (order 0, 1, 2...), then tests.\n\n3. TRACE DEPENDENCIES: For each feature X, identify which other features it depends on:\n   - A feature X depends on Y if any implementation file in X imports from a file in Y\n   - Use type = \"required\" (default) for static imports\n   - Use type = \"optional\" for dynamic/conditional imports\n   - Do NOT include transitive dependencies\n   - Do NOT include test-only dependencies\n\n4. WRITE DESCRIPTIONS: Each description has two sentences:\n   - Sentence 1: WHAT it does (concrete, specific)\n   - Sentence 2: WHY it matters (architectural role, contracts, problems solved)\n   Start with a noun phrase or verb phrase. Never start with \"This feature...\" or \"A module that...\"\n   Use domain-specific terms from the codebase. Under 300 characters ideal, never exceed 500.\n\n5. SET STATUS:\n   - \"ga\" = has implementation AND tests\n   - \"in_development\" = has implementation but no tests\n   - \"draft\" = partially implemented or planned\n\n6. ASSIGN MODULES: Each feature gets a module entry with a glob pattern matching its directory (e.g., \"src/auth/**\").\n\n7. DERIVE TAGS: Auto-derive from the key segments. Split on \".\" and \"-\". Always include the category as the first tag.\n\nOutput the decomposed features inside <features> tags as a JSON array.",
+              "xmlTags": [
+                {
+                  "tag": "survey-results",
+                  "purpose": "Contains the structured survey from the previous step"
+                },
+                {
+                  "tag": "source-tree",
+                  "purpose": "Contains the full recursive file listing"
+                },
+                {
+                  "tag": "schema-spec",
+                  "purpose": "Contains the FeatureSchema specification for reference"
+                },
+                {
+                  "tag": "features",
+                  "purpose": "Contains the decomposed feature definitions as a JSON array"
+                }
+              ]
+            },
+
+            "userTemplate": "<survey-results>\n{{surveyResults}}\n</survey-results>\n\n<source-tree>\n{{sourceTree}}\n</source-tree>\n\n<schema-spec>\n{{featureSchema}}\n</schema-spec>",
+
+            "variables": {
+              "surveyResults": {
+                "type": "string",
+                "description": "JSON output from the survey step containing primaryLanguages, sourceRoot, testConvention, and candidate features.",
+                "required": true
+              },
+              "sourceTree": {
+                "type": "string",
+                "description": "Recursive file listing of the codebase (pass-through from survey step). Re-injected because this step needs individual file paths for file-to-feature mapping and import statement tracing — the survey output only contains directory-level candidates, not per-file detail.",
+                "required": true
+              },
+              "featureSchema": {
+                "type": "string",
+                "description": "Contents of src/feature-schema.ts (or equivalent FeatureSchema specification) defining the target JSON structure, field constraints, and validation rules.",
+                "required": true
+              }
+            },
+
+            "outputFormat": {
+              "type": "json",
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "key": { "type": "string" },
+                    "name": { "type": "string" },
+                    "description": { "type": "string" },
+                    "status": { "type": "string", "enum": ["draft", "in_development", "feature_flagged", "ga", "deprecated", "removed"] },
+                    "category": { "type": "string" },
+                    "files": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": { "type": "string" },
+                          "role": { "type": "string" },
+                          "language": { "type": "string" }
+                        },
+                        "required": ["path", "role"]
+                      }
+                    },
+                    "dependencies": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "featureKey": { "type": "string" },
+                          "type": { "type": "string", "enum": ["required", "optional", "conflicts"] }
+                        },
+                        "required": ["featureKey"]
+                      }
+                    },
+                    "modules": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "path": { "type": "string" },
+                          "language": { "type": "string" }
+                        },
+                        "required": ["path"]
+                      }
+                    },
+                    "tags": { "type": "array", "items": { "type": "string" } }
+                  },
+                  "required": ["key", "name", "description", "status", "files", "tags"]
+                }
+              },
+              "constraints": [
+                "Wrap the output JSON array in <features> tags — the tags are extraction delimiters, the content between them must be valid standalone JSON",
+                "Every file path must exist in the provided source tree",
+                "Every dependency featureKey must reference another feature's key in this array",
+                "No circular dependencies",
+                "No file may appear in more than one feature",
+                "Every key must match /^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$/"
+              ]
+            },
+
+            "examples": [
+              {
+                "input": "Survey candidate: { \"proposedKey\": \"auth.session\", \"directory\": \"src/auth/session\", \"implementationFileCount\": 3, \"testFileCount\": 1, \"purposeHypothesis\": \"Session management for authenticated users\" }\n\nSource tree (relevant):\nsrc/auth/session/index.ts\nsrc/auth/session/store.ts\nsrc/auth/session/types.ts\nsrc/__tests__/auth/session.test.ts\n\nImports found:\n- src/auth/session/store.ts imports from src/common/result.ts\n- src/auth/session/store.ts imports from src/auth/token/verify.ts",
+                "output": "{\n  \"key\": \"auth.session\",\n  \"name\": \"Session Management\",\n  \"description\": \"HTTP session lifecycle with store-backed persistence and expiration. Provides the session contract consumed by middleware and route handlers for identity continuity across requests.\",\n  \"status\": \"ga\",\n  \"category\": \"auth\",\n  \"files\": [\n    { \"path\": \"src/auth/session/index.ts\", \"role\": \"entry_point\", \"language\": \"typescript\" },\n    { \"path\": \"src/auth/session/store.ts\", \"role\": \"implementation\", \"language\": \"typescript\" },\n    { \"path\": \"src/auth/session/types.ts\", \"role\": \"types\", \"language\": \"typescript\" },\n    { \"path\": \"src/__tests__/auth/session.test.ts\", \"role\": \"test\", \"language\": \"typescript\" }\n  ],\n  \"dependencies\": [\n    { \"featureKey\": \"infrastructure.common\", \"type\": \"required\" },\n    { \"featureKey\": \"auth.token\", \"type\": \"required\" }\n  ],\n  \"modules\": [\n    { \"path\": \"src/auth/session/**\", \"language\": \"typescript\" }\n  ],\n  \"tags\": [\"auth\", \"session\"]\n}",
+                "reasoning": "1. COHESION: All 3 implementation files share the auth/session directory and operate on session types. index.ts re-exports, store.ts is the implementation, types.ts defines the contract. Cohesive — no split needed.\n2. FILES: index.ts is entry_point (primary import target), store.ts is implementation, types.ts is types-only, session.test.ts matched by __tests__/auth/ path convention.\n3. DEPENDENCIES: store.ts imports result.ts → infrastructure.common (required). store.ts imports verify.ts → auth.token (required). The test file imports from auth.session itself — not a cross-feature dependency.\n4. DESCRIPTION: Sentence 1 = what (session lifecycle + persistence). Sentence 2 = why (contract for middleware/handlers). Starts with noun phrase, under 300 chars.\n5. STATUS: Has implementation AND test → ga.",
+                "label": "decompose-auth-session"
+              }
+            ],
+
+            "techniques": [
+              {
+                "technique": "few_shot",
+                "examples": [
+                  {
+                    "input": "Survey candidate: { \"proposedKey\": \"auth.session\", \"directory\": \"src/auth/session\", \"implementationFileCount\": 3, \"testFileCount\": 1, \"purposeHypothesis\": \"Session management for authenticated users\" }\n\nSource tree (relevant):\nsrc/auth/session/index.ts\nsrc/auth/session/store.ts\nsrc/auth/session/types.ts\nsrc/__tests__/auth/session.test.ts\n\nImports found:\n- src/auth/session/store.ts imports from src/common/result.ts\n- src/auth/session/store.ts imports from src/auth/token/verify.ts",
+                    "output": "{\n  \"key\": \"auth.session\",\n  \"name\": \"Session Management\",\n  \"description\": \"HTTP session lifecycle with store-backed persistence and expiration. Provides the session contract consumed by middleware and route handlers for identity continuity across requests.\",\n  \"status\": \"ga\",\n  \"category\": \"auth\",\n  \"files\": [\n    { \"path\": \"src/auth/session/index.ts\", \"role\": \"entry_point\", \"language\": \"typescript\" },\n    { \"path\": \"src/auth/session/store.ts\", \"role\": \"implementation\", \"language\": \"typescript\" },\n    { \"path\": \"src/auth/session/types.ts\", \"role\": \"types\", \"language\": \"typescript\" },\n    { \"path\": \"src/__tests__/auth/session.test.ts\", \"role\": \"test\", \"language\": \"typescript\" }\n  ],\n  \"dependencies\": [\n    { \"featureKey\": \"infrastructure.common\", \"type\": \"required\" },\n    { \"featureKey\": \"auth.token\", \"type\": \"required\" }\n  ],\n  \"modules\": [\n    { \"path\": \"src/auth/session/**\", \"language\": \"typescript\" }\n  ],\n  \"tags\": [\"auth\", \"session\"]\n}",
+                    "reasoning": "1. COHESION: All 3 implementation files share the auth/session directory and operate on session types. Cohesive — no split needed.\n2. FILES: index.ts is entry_point, store.ts is implementation, types.ts is types-only, session.test.ts matched by __tests__/auth/ convention.\n3. DEPENDENCIES: store.ts imports result.ts → infrastructure.common. store.ts imports verify.ts → auth.token. Test imports are not cross-feature dependencies.\n4. DESCRIPTION: What (session lifecycle) + Why (contract for middleware). Starts with noun phrase, under 300 chars.\n5. STATUS: Has implementation AND test → ga.",
+                    "label": "decompose-auth-session"
+                  }
+                ],
+                "includeEdgeCases": false
+              },
+              {
+                "technique": "chain_of_thought",
+                "variant": "few_shot",
+                "triggerPhrase": "I will systematically analyze each candidate feature following the demonstrated pattern: validate cohesion, map files, trace dependencies, write descriptions, set status.",
+                "thinkingTag": "reasoning"
+              }
+            ],
+
+            "prefill": "<reasoning>\n",
+
+            "modelParams": {
+              "model": "claude-opus-4-6",
+              "temperature": 0.1,
+              "maxTokens": 32768,
+              "thinking": { "type": "enabled", "budgetTokens": 16384 }
+            }
+          }
+        }
+      },
+
+      {
+        "id": "generate",
+        "description": "Generate final feature JSON files with placeholder UUIDs, topological ordering, lifecycle dates, and registry metadata. Input binding: decomposedFeatures = extract JSON from <features> tags in decompose step output; currentDate = runtime-provided current date.",
+        "inputFrom": ["decompose"],
+        "orchestration": {
+          "strategy": "single",
+          "call": {
+            "system": {
+              "role": {
+                "persona": "Data engineer specializing in schema-conformant JSON generation",
+                "expertise": [
+                  "Topological sorting",
+                  "JSON Schema validation",
+                  "Feature registry management",
+                  "Deterministic JSON serialization"
+                ],
+                "constraints": [
+                  "Every id field must be a syntactically valid UUIDv4 placeholder — the runtime replaces these with cryptographically random UUIDs. Never reuse a placeholder across entities",
+                  "Every feature must have a unique order value",
+                  "Order values must respect the dependency DAG: if A depends on B, then A.order > B.order",
+                  "Status-date invariants: ga requires gaAt, deprecated requires deprecatedAt, removed requires removedAt",
+                  "Output must be valid JSON parseable by any JSON parser"
+                ],
+                "tone": "mechanical and exact"
+              },
+              "instructions": "You are generating the final feature registry JSON files from decomposed feature definitions.\n\nYou receive:\n- The decomposed features from the previous step (keys, files, dependencies, descriptions)\n- The current date for lifecycle timestamps\n\nFor each feature, do the following:\n\n1. TOPOLOGICAL SORT: Build the dependency DAG and assign order values.\n   - Features with no dependencies get the lowest numbers (starting from 0).\n   - Within the same dependency tier, order alphabetically by key.\n   - If feature A depends on feature B, then A.order > B.order.\n   - Use order ranges: 000-009 infrastructure, 010-019 entities, 020-029 analysis/synthesis, 030+ services/adapters.\n\n2. GENERATE PLACEHOLDER UUIDs: Assign a syntactically valid UUIDv4 to every id field (feature, file, dependency, module). Use the format xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx. These are placeholder values — the runtime SHOULD replace them with cryptographically random UUIDs before persisting. Never reuse a placeholder across entities.\n\n3. SET LIFECYCLE DATES:\n   - gaAt: currentDate (for status=ga features)\n   - introducedAt: currentDate\n   - createdAt: currentDate + T00:00:00Z (ISO datetime)\n   - updatedAt: same as createdAt\n\n4. ASSIGN FILE ORDER: Within each feature, implementation files get order 0, 1, 2... then test files continue the sequence.\n\n5. SET FILE SOURCE: Use \"manual\" for all files in initial generation.\n\n6. PRODUCE OUTPUT: Generate two things:\n   a. An array of feature objects, each conforming to the FeatureSchema.\n   b. A registry-meta.json object with $schema, version, lastScannedAt, lastScanTrigger, and empty scanHistory.\n\n7. FILE NAMING: For each feature, include the suggested filename: {NNN}.{key}.json where NNN is the zero-padded 3-digit order number.\n\n8. CHUNKING: If the codebase has more than 25 features, output features in batches of 20. Each batch is a complete JSON object with the same structure. Set a \"continuation\" field to true on all batches except the last. The runtime must concatenate the features arrays from all batches.\n\nOutput the final registry inside <registry> tags as a JSON object with keys \"registryMeta\" and \"features\" (array of {filename, content} objects).",
+              "xmlTags": [
+                {
+                  "tag": "decomposed-features",
+                  "purpose": "Contains the decomposed feature definitions from the previous step"
+                },
+                {
+                  "tag": "registry",
+                  "purpose": "Contains the final generated registry with metadata and feature files"
+                }
+              ]
+            },
+
+            "userTemplate": "<decomposed-features>\n{{decomposedFeatures}}\n</decomposed-features>\n\nCurrent date: {{currentDate}}",
+
+            "variables": {
+              "decomposedFeatures": {
+                "type": "string",
+                "description": "JSON array of decomposed feature definitions from the decompose step, containing keys, files, dependencies, descriptions, status, modules, and tags.",
+                "required": true
+              },
+              "currentDate": {
+                "type": "string",
+                "description": "Current date in ISO format (YYYY-MM-DD) for lifecycle timestamps.",
+                "required": true
+              }
+            },
+
+            "outputFormat": {
+              "type": "json",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "registryMeta": {
+                    "type": "object",
+                    "properties": {
+                      "$schema": { "type": "string" },
+                      "version": { "type": "string" },
+                      "lastScannedAt": { "type": "string" },
+                      "lastScanTrigger": { "type": "string" },
+                      "scanHistory": { "type": "array" }
+                    },
+                    "required": ["$schema", "version", "lastScannedAt", "lastScanTrigger", "scanHistory"]
+                  },
+                  "features": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "filename": { "type": "string", "description": "Suggested filename: {NNN}.{key}.json" },
+                        "content": { "type": "object", "description": "Complete FeatureSchema-conformant JSON object" }
+                      },
+                      "required": ["filename", "content"]
+                    }
+                  }
+                },
+                "required": ["registryMeta", "features"]
+              },
+              "constraints": [
+                "Wrap the output JSON object in <registry> tags — the tags are extraction delimiters, the content between them must be valid standalone JSON",
+                "Every feature content object must conform to FeatureSchema",
+                "Every id field must be a syntactically valid UUIDv4 placeholder (format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx) — the runtime will replace these with cryptographically random UUIDs",
+                "Order values must be unique and respect dependency DAG",
+                "Filenames must follow the pattern: {NNN}.{key}.json with zero-padded 3-digit order",
+                "If more than 25 features, output in batches of 20 with continuation: true on intermediate batches"
+              ]
+            },
+
+            "techniques": [
+              {
+                "technique": "zero_shot"
+              }
+            ],
+
+            "prefill": "<registry>\n",
+
+            "modelParams": {
+              "model": "claude-opus-4-6",
+              "temperature": 0.0,
+              "maxTokens": 65536,
+              "thinking": { "type": "enabled", "budgetTokens": 8192 }
+            }
+          }
+        }
+      }
+    ]
+  },
+
+  "context": {
+    "injectedDocuments": [
+      {
+        "id": "feature-schema-spec",
+        "content": "The FeatureSchema is defined in src/feature-schema.ts using Zod v4. Key constraints: Feature.key must match /^[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*)*$/. Feature.id must be UUIDv4. Status lifecycle: draft → in_development → feature_flagged → ga → deprecated → removed. Refinements enforce: gaAt required when status=ga, deprecatedAt required when status=deprecated, removedAt required when status=removed. File roles: entry_point, implementation, test, config, migration, documentation, types, helper. Dependency types: required, optional, conflicts. The schema is language-agnostic — the output is plain JSON consumable by any toolchain.",
+        "metadata": {
+          "source": "src/feature-schema.ts",
+          "purpose": "Schema specification reference for all chain steps",
+          "version": "1.0.0"
+        }
+      },
+      {
+        "id": "language-conventions",
+        "content": "Language-specific conventions for feature analysis:\n\nTypeScript/JS: source in src/, tests in __tests__/ or *.test.ts, imports via import/require, exclude node_modules/ and dist/.\nPython: source in package root or src/, tests in tests/ or test_*.py, imports via from/import, exclude __pycache__/ and venv/.\nGo: source at project root or internal/pkg/, tests co-located as *_test.go, imports via import \"path\", exclude vendor/.\nRust: source in src/, tests inline via #[cfg(test)] or in tests/, imports via use crate::, exclude target/.\nJava/Kotlin: source in src/main/java/, tests in src/test/java/, imports via import com.pkg, exclude build/ and .gradle/.\nC#/.NET: source at project root, tests in *.Tests/ project, imports via using Namespace, exclude bin/ and obj/.\nRuby: source in lib/, tests in spec/ or test/, imports via require, exclude .bundle/.\nPHP: source in src/, tests in tests/ or *Test.php, imports via use Namespace\\Class, exclude vendor/.\nSwift: source in Sources/, tests in Tests/, imports via import Module, exclude .build/.\nC/C++: source in src/ and include/, tests in test/, imports via #include, exclude build/ and cmake-build-*/.",
+        "metadata": {
+          "purpose": "Cross-language reference for the survey and decompose steps",
+          "version": "1.0.0"
+        }
+      }
+    ],
+    "tokenBudget": {
+      "total": 245000,
+      "instructions": 20000,
+      "context": 100000,
+      "output": 80000
+    }
+  },
+
+  "evaluation": {
+    "criteria": [
+      {
+        "name": "completeness",
+        "description": "Every source file in the codebase is mapped to exactly one feature. No files are orphaned or duplicated.",
+        "weight": 0.20
+      },
+      {
+        "name": "cohesion",
+        "description": "Each feature represents a single, well-bounded concern. Files within a feature are functionally related.",
+        "weight": 0.20
+      },
+      {
+        "name": "dependency_accuracy",
+        "description": "Dependencies reflect actual import relationships. No transitive or phantom dependencies. No cycles.",
+        "weight": 0.15
+      },
+      {
+        "name": "schema_conformance",
+        "description": "Every generated JSON file passes FeatureSchema validation. All required fields present, all refinements satisfied.",
+        "weight": 0.15
+      },
+      {
+        "name": "description_quality",
+        "description": "Descriptions follow the two-part structure (what + why), use domain terms, are under 300 characters, and start with a noun/verb phrase.",
+        "weight": 0.20
+      },
+      {
+        "name": "ordering_correctness",
+        "description": "Feature order values respect the dependency DAG: if feature A depends on feature B, then A.order > B.order. No topological violations.",
+        "weight": 0.10
+      }
+    ]
+  },
+
+  "metadata": {
+    "author": "biz-strategy-finder",
+    "createdAt": "2026-02-15",
+    "updatedAt": "2026-02-15",
+    "changelog": [
+      {
+        "version": "1.0.0",
+        "date": "2026-02-15",
+        "changes": "Initial version. Three-step chain: survey → decompose → generate. Language-agnostic design supporting TypeScript, Python, Rust, Go, Java, C#, Ruby, PHP, Swift, and C/C++. Includes injected documents for schema spec and language conventions."
+      },
+      {
+        "version": "1.1.0",
+        "date": "2026-02-15",
+        "changes": "Review fixes (12 items). P0: token budget headroom (200k→245k), chunking fallback for >25 features. P1: prefill parsing trap fix, variable extraction bindings documented in step descriptions, sourceTree re-injection rationale, few-shot example for decompose step, XML/JSON format contradiction resolved (XML tags = extraction delimiters). P2: UUID runtime replacement documented, evaluation weights rebalanced (description_quality 0.15→0.20), injected document versions added, ordering_correctness criterion added, exclusions field instruction added to survey step."
+      }
+    ]
+  }
+}

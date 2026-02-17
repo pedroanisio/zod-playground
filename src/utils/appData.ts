@@ -10,13 +10,34 @@ export type AppData = {
 } | null
 
 function parseAppData(appData: string): AppData {
-  const parsed = JSON.parse(appData)
+  try {
+    const parsed = JSON.parse(appData) as unknown
+    if (!parsed || typeof parsed !== 'object') return null
+    const record = parsed as Record<string, unknown>
 
-  // backward compatibility
-  if (!parsed.version) parsed.version = DEFAULT_APP_DATA.version
-  if (!parsed.isZodMini) parsed.isZodMini = false
+    const schema =
+      typeof record.schema === 'string' ? record.schema : DEFAULT_APP_DATA.schema
+    const parsedValues = Array.isArray(record.values)
+      ? record.values.filter((value): value is string => typeof value === 'string')
+      : DEFAULT_APP_DATA.values
+    const values = parsedValues.length > 0 ? parsedValues : DEFAULT_APP_DATA.values
+    const version =
+      typeof record.version === 'string' && record.version.length > 0
+        ? record.version
+        : DEFAULT_APP_DATA.version
 
-  return parsed
+    // backward compatibility
+    const isZodMini = typeof record.isZodMini === 'boolean' ? record.isZodMini : false
+
+    return {
+      schema,
+      values,
+      version,
+      isZodMini,
+    }
+  } catch {
+    return null
+  }
 }
 
 export function getAppDataFromLocalStorage(): AppData {
@@ -30,6 +51,7 @@ export function getAppDataFromSearchParams(): AppData {
 
   if (compressedAppData) {
     const appData = LZString.decompressFromEncodedURIComponent(compressedAppData)
+    if (!appData) return null
     return parseAppData(appData)
   }
 
