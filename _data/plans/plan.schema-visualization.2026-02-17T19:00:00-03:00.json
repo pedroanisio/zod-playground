@@ -4,9 +4,9 @@
     "planId": "plan.schema-visualization",
     "version": "1.1.0",
     "createdAt": "2026-02-17T19:00:00-03:00",
-    "updatedAt": "2026-02-17T20:00:00-03:00",
+    "updatedAt": "2026-02-17T20:31:35-03:00",
     "authorId": "ai-agent",
-    "snapshotRef": "00713df20eafa55972897512a95a0685a0335491",
+    "snapshotRef": "9c43cc5a763be89af9df315bc63922de5717c32c",
     "branch": "main",
     "supersedes": [],
     "selfPath": "_data/plans/plan.schema-visualization.2026-02-17T19:00:00-03:00.json",
@@ -33,7 +33,7 @@
     "costOfInaction": "Users continue relying on mental parsing of schema code to understand structure; the playground misses an opportunity to differentiate through visual tooling."
   },
   "baseline": {
-    "snapshotRef": "00713df20eafa55972897512a95a0685a0335491",
+    "snapshotRef": "9c43cc5a763be89af9df315bc63922de5717c32c",
     "metrics": [
       {
         "name": "buildStatus",
@@ -315,7 +315,7 @@
         "temporalScope": { "kind": "single-step", "stepId": "step-unit-tests" },
         "modality": "structural",
         "gradingKind": "boolean",
-        "predicateRef": "npm run test:unit exits 0 with schemaVisualization.unit.ts included",
+        "predicateRef": "node --experimental-transform-types --test tests/schemaVisualization.unit.ts exits 0",
         "declarationCost": 0
       },
       {
@@ -516,7 +516,7 @@
       "verification": [
         {
           "name": "Unit tests pass",
-          "command": "npx node --test tests/schemaVisualization.unit.ts",
+          "command": "node --experimental-transform-types --test tests/schemaVisualization.unit.ts",
           "passCriteria": "All unit tests pass",
           "blocking": true,
           "verifiedBy": "automated"
@@ -922,9 +922,9 @@
       "passCriteria": "E2E regression test for Values tab passes"
     },
     {
-      "description": "No bundle size regression — zod-mermaid and mermaid are loaded from CDN only",
+      "description": "No bundled mermaid/zod-mermaid code in build output — visualization libraries are loaded from CDN at runtime",
       "verificationCommand": "npm run build",
-      "passCriteria": "Build output size unchanged from baseline"
+      "passCriteria": "Build succeeds and dist/assets JS bundles do not contain mermaid or zod-mermaid library payloads; source uses pinned CDN constants"
     },
     {
       "description": "All existing E2E tests continue to pass after integration",

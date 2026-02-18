@@ -1,4 +1,4 @@
-import {ActionIcon, Box, Button, Flex, Tooltip, useComputedColorScheme} from '@mantine/core'
+import {ActionIcon, Box, Button, Flex, Tabs, Tooltip, useComputedColorScheme} from '@mantine/core'
 import {useMediaQuery} from '@mantine/hooks'
 import {notifications} from '@mantine/notifications'
 import Editor, {type Monaco, useMonaco} from '@monaco-editor/react'
@@ -9,6 +9,7 @@ import classes from './App.module.css'
 import {DEFAULT_APP_DATA, EDITOR_OPTIONS} from './constants'
 import {ColorSchemeToggle} from './features/ColorSchemeToggle'
 import {CopyButton} from './features/CopyButton'
+import {SchemaVisualization} from './features/SchemaVisualization/SchemaVisualization'
 import {Validation} from './features/ValueEditor/ValueEditor'
 import {VersionPicker} from './features/VersionPicker/VersionPicker'
 import {usePersistAppData} from './hooks/usePersistAppData'
@@ -67,6 +68,7 @@ const App = () => {
   const [values, setValues] = useState<Array<string>>(() => initialAppData.values)
   const [version, setVersion] = useState(initialAppData.version)
   const [isZodMini, setIsZodMini] = useState(initialAppData.isZodMini)
+  const [rightPanelTab, setRightPanelTab] = useState<'values' | 'diagram'>('values')
 
   const appData = useMemo(
     () => ({
@@ -84,6 +86,7 @@ const App = () => {
   const computedColorScheme = useComputedColorScheme('light')
 
   const isMobile = useMediaQuery('(max-width: 768px)')
+  const isZod4 = Number.parseInt(version.split('.')[0] ?? '0', 10) >= 4
 
   const schemaValidation = zod.validateSchema(schema)
   const evaluatedSchema = schemaValidation.success ? schemaValidation.data : undefined
@@ -97,6 +100,12 @@ const App = () => {
       setIsLoading(false)
     })
   }, [version, isZodMini, monaco])
+
+  useEffect(() => {
+    if (!isZod4 && rightPanelTab === 'diagram') {
+      setRightPanelTab('values')
+    }
+  }, [isZod4, rightPanelTab])
 
   return (
     <Box className={classes.layout}>
@@ -177,45 +186,74 @@ const App = () => {
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel className={classes.rightPanel} defaultSize={50} minSize={30}>
-            <div className={classes.valuesStack}>
-              {values.map((value, index) => {
-                return (
-                  <Validation
-                    // biome-ignore lint/suspicious/noArrayIndexKey: items order does not change
-                    key={`val${index}`}
-                    schema={evaluatedSchema}
-                    value={value}
-                    index={index}
-                    onAdd={() => {
-                      setValues((values) => [...values, ''])
-                    }}
-                    onRemove={
-                      values.length > 1
-                        ? () => {
-                            setValues((values) => {
-                              return values.filter((_, i) => i !== index)
-                            })
-                          }
-                        : undefined
-                    }
-                    onClear={(clearedIndex) => {
-                      setValues((values) => {
-                        const newValues = [...values]
-                        newValues[clearedIndex] = ''
-                        return newValues
-                      })
-                    }}
-                    onChange={(newValue) => {
-                      setValues((values) => {
-                        const newValues = [...values]
-                        newValues[index] = newValue
-                        return newValues
-                      })
-                    }}
-                  />
-                )
-              })}
-            </div>
+            <Tabs
+              value={rightPanelTab}
+              onChange={(value) => {
+                if (value === 'values' || value === 'diagram') {
+                  setRightPanelTab(value)
+                }
+              }}
+              className={classes.tabs}
+            >
+              <Tabs.List>
+                <Tabs.Tab value="values">Values</Tabs.Tab>
+                <Tooltip label="Requires Zod 4+" withArrow disabled={isZod4}>
+                  <span>
+                    <Tabs.Tab value="diagram" disabled={!isZod4}>
+                      Diagram
+                    </Tabs.Tab>
+                  </span>
+                </Tooltip>
+              </Tabs.List>
+              <Tabs.Panel value="values" className={classes.tabPanel}>
+                <div className={classes.valuesStack}>
+                  {values.map((value, index) => {
+                    return (
+                      <Validation
+                        // biome-ignore lint/suspicious/noArrayIndexKey: items order does not change
+                        key={`val${index}`}
+                        schema={evaluatedSchema}
+                        value={value}
+                        index={index}
+                        onAdd={() => {
+                          setValues((values) => [...values, ''])
+                        }}
+                        onRemove={
+                          values.length > 1
+                            ? () => {
+                                setValues((values) => {
+                                  return values.filter((_, i) => i !== index)
+                                })
+                              }
+                            : undefined
+                        }
+                        onClear={(clearedIndex) => {
+                          setValues((values) => {
+                            const newValues = [...values]
+                            newValues[clearedIndex] = ''
+                            return newValues
+                          })
+                        }}
+                        onChange={(newValue) => {
+                          setValues((values) => {
+                            const newValues = [...values]
+                            newValues[index] = newValue
+                            return newValues
+                          })
+                        }}
+                      />
+                    )
+                  })}
+                </div>
+              </Tabs.Panel>
+              <Tabs.Panel value="diagram" className={classes.tabPanel}>
+                <SchemaVisualization
+                  schema={evaluatedSchema}
+                  colorScheme={computedColorScheme}
+                  isZod4={isZod4}
+                />
+              </Tabs.Panel>
+            </Tabs>
           </ResizablePanel>
         </ResizablePanelGroup>
       </main>

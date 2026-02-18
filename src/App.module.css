@@ -32,6 +32,23 @@
 .rightPanel {
   height: 100%;
   overflow: auto;
+  display: flex;
+  min-height: 0;
+}
+
+.tabs {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.tabPanel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 }
 
 .sectionTitle {
