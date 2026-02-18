@@ -1,6 +1,6 @@
 import assert from 'node:assert'
 import {describe, test} from 'node:test'
-import {ensureReturnInSchema} from '../src/zod.ts'
+import {createSchemaRequire, ensureReturnInSchema, executeSchemaCode} from '../src/zod.ts'
 
 describe('ensureReturnInSchema', () => {
   describe('correctness', () => {
@@ -257,5 +257,84 @@ return z.object({name: noreturn})
 const afterreturn = z.string()`,
       )
     })
+  })
+})
+
+describe('executeSchemaCode', () => {
+  const toSchema = (kind: string, shape?: unknown) => ({
+    kind,
+    shape,
+    def: {type: kind},
+    safeParse: () => ({success: true, data: undefined}),
+  })
+
+  const assertSchema = (value: unknown, {kind, shape}: {kind: string; shape?: unknown}) => {
+    const schema = value as {
+      kind?: unknown
+      shape?: unknown
+      safeParse?: unknown
+      def?: {type?: unknown}
+    }
+    assert.strictEqual(schema.kind, kind)
+    assert.deepStrictEqual(schema.shape, shape)
+    assert.strictEqual(schema.def?.type, kind)
+    assert.strictEqual(typeof schema.safeParse, 'function')
+  }
+
+  const fakeZ = {
+    string: () => toSchema('string'),
+    object: (shape: unknown) => toSchema('object', shape),
+  }
+
+  test('supports transpiled exports assignments without crashing', () => {
+    const result = executeSchemaCode('exports.Schema = z.string(); return z.object({});', fakeZ)
+    assertSchema(result, {kind: 'object', shape: {}})
+  })
+
+  test('supports transpiled require("zod") imports', () => {
+    const result = executeSchemaCode(
+      'const zodImport = require("zod"); return zodImport.z.string();',
+      fakeZ,
+    )
+    assertSchema(result, {kind: 'string'})
+  })
+
+  test('auto-detects exported schema when no explicit return exists', () => {
+    const result = executeSchemaCode('exports.feedbackSchema = z.object({});', fakeZ)
+    assertSchema(result, {kind: 'object', shape: {}})
+  })
+
+  test('chooses best schema candidate when multiple are exported', () => {
+    const result = executeSchemaCode(
+      'exports.Status = z.string(); exports.RootSchema = z.object({}); exports.Count = z.string();',
+      fakeZ,
+    )
+    assertSchema(result, {kind: 'object', shape: {}})
+  })
+
+  test('throws clear error for unsupported imports', () => {
+    assert.throws(
+      () => executeSchemaCode('require("lodash")', fakeZ),
+      /Unsupported import in schema editor: lodash/,
+    )
+  })
+})
+
+describe('createSchemaRequire', () => {
+  const fakeZ = {ok: true}
+
+  test('returns z runtime for supported zod specifiers', () => {
+    const schemaRequire = createSchemaRequire(fakeZ)
+
+    assert.deepStrictEqual(schemaRequire('zod'), {default: fakeZ, z: fakeZ, ok: true})
+    assert.deepStrictEqual(schemaRequire('zod/v4'), {default: fakeZ, z: fakeZ, ok: true})
+    assert.deepStrictEqual(schemaRequire('zod/mini'), {default: fakeZ, z: fakeZ, ok: true})
+  })
+
+  test('throws clear error when zod runtime is missing', () => {
+    assert.throws(
+      () => createSchemaRequire(undefined),
+      /Zod runtime is still loading. Please wait a moment and try again./,
+    )
   })
 })

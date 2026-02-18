@@ -33,8 +33,14 @@
   opacity: 0.5;
 }
 
-.diagramArea {
+.diagramTools {
+  padding-inline: var(--mantine-spacing-md);
+  padding-block: var(--mantine-spacing-xs);
   border-top: 1px solid var(--mantine-color-neutral-2);
+  border-bottom: 1px solid var(--mantine-color-neutral-2);
+}
+
+.diagramArea {
   padding: var(--mantine-spacing-md);
   overflow: auto;
   min-height: 0;
@@ -45,9 +51,23 @@
   min-width: max-content;
 }
 
-.diagramCanvas :global(svg) {
+.diagramCanvasZoom :global(svg) {
   display: block;
   max-width: none;
+  height: auto;
+  transform: scale(var(--schema-viz-zoom, 1));
+  transform-origin: top left;
+}
+
+.diagramCanvasFit {
+  width: 100%;
+  min-width: 0;
+}
+
+.diagramCanvasFit :global(svg) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   height: auto;
 }
 

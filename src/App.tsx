@@ -69,6 +69,7 @@ const App = () => {
   const [version, setVersion] = useState(initialAppData.version)
   const [isZodMini, setIsZodMini] = useState(initialAppData.isZodMini)
   const [rightPanelTab, setRightPanelTab] = useState<'values' | 'diagram'>('values')
+  const [schemaRuntimeEpoch, setSchemaRuntimeEpoch] = useState(0)
 
   const appData = useMemo(
     () => ({
@@ -88,7 +89,10 @@ const App = () => {
   const isMobile = useMediaQuery('(max-width: 768px)')
   const isZod4 = Number.parseInt(version.split('.')[0] ?? '0', 10) >= 4
 
-  const schemaValidation = zod.validateSchema(schema)
+  const schemaValidation = useMemo(() => {
+    void schemaRuntimeEpoch
+    return zod.validateSchema(schema)
+  }, [schema, schemaRuntimeEpoch])
   const evaluatedSchema = schemaValidation.success ? schemaValidation.data : undefined
   const schemaError = !schemaValidation.success ? schemaValidation.error : undefined
 
@@ -98,6 +102,7 @@ const App = () => {
     setIsLoading(true)
     loadZodVersion({version, isZodMini, monaco}).then(() => {
       setIsLoading(false)
+      setSchemaRuntimeEpoch((current) => current + 1)
     })
   }, [version, isZodMini, monaco])
 
@@ -130,7 +135,7 @@ const App = () => {
         </Tooltip>
         <ColorSchemeToggle />
       </Header>
-      <main style={{maxWidth: '100vw'}}>
+      <main className={classes.mainShell}>
         <ResizablePanelGroup
           orientation={isMobile ? 'vertical' : 'horizontal'}
           className={classes.main}
@@ -194,6 +199,15 @@ const App = () => {
                 }
               }}
               className={classes.tabs}
+              styles={{
+                panel: {
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: '1 1 0',
+                  minHeight: 0,
+                  overflow: 'auto',
+                },
+              }}
             >
               <Tabs.List>
                 <Tabs.Tab value="values">Values</Tabs.Tab>
@@ -205,7 +219,11 @@ const App = () => {
                   </span>
                 </Tooltip>
               </Tabs.List>
-              <Tabs.Panel value="values" className={classes.tabPanel}>
+              <Tabs.Panel
+                value="values"
+                className={classes.tabPanel}
+                style={{display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0}}
+              >
                 <div className={classes.valuesStack}>
                   {values.map((value, index) => {
                     return (
@@ -246,9 +264,14 @@ const App = () => {
                   })}
                 </div>
               </Tabs.Panel>
-              <Tabs.Panel value="diagram" className={classes.tabPanel}>
+              <Tabs.Panel
+                value="diagram"
+                className={classes.tabPanel}
+                style={{display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0}}
+              >
                 <SchemaVisualization
                   schema={evaluatedSchema}
+                  schemaError={schemaError}
                   colorScheme={computedColorScheme}
                   isZod4={isZod4}
                 />

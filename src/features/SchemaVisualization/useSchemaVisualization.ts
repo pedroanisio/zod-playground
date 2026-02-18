@@ -55,35 +55,95 @@ export function withTimeout<T>(
 }
 
 async function loadVisualizationLibraries(): Promise<VisualizationLibraries> {
-  if (!cachedLibrariesPromise) {
-    cachedLibrariesPromise = withTimeout(
+  const getGenerateMermaidDiagram = (
+    module: unknown,
+  ): VisualizationLibraries['generateMermaidDiagram'] | null => {
+    const moduleObject = module as {
+      generateMermaidDiagram?: VisualizationLibraries['generateMermaidDiagram']
+      default?:
+        | VisualizationLibraries['generateMermaidDiagram']
+        | {generateMermaidDiagram?: VisualizationLibraries['generateMermaidDiagram']}
+    }
+
+    if (typeof moduleObject.generateMermaidDiagram === 'function') {
+      return moduleObject.generateMermaidDiagram
+    }
+
+    if (typeof moduleObject.default === 'function') {
+      return moduleObject.default
+    }
+
+    if (
+      moduleObject.default &&
+      typeof moduleObject.default === 'object' &&
+      typeof moduleObject.default.generateMermaidDiagram === 'function'
+    ) {
+      return moduleObject.default.generateMermaidDiagram
+    }
+
+    return null
+  }
+
+  const getMermaidRuntime = (module: unknown): MermaidLike | null => {
+    const moduleObject = module as {
+      default?: MermaidLike
+      mermaid?: MermaidLike
+    }
+    const mermaidExport = moduleObject.default ?? moduleObject.mermaid
+
+    if (!mermaidExport?.initialize || !mermaidExport?.render) {
+      return null
+    }
+
+    return mermaidExport
+  }
+
+  const resolveVisualizationLibraries = (
+    zodMermaidModule: unknown,
+    mermaidModule: unknown,
+  ): VisualizationLibraries => {
+    const generateMermaidDiagram = getGenerateMermaidDiagram(zodMermaidModule)
+    const mermaid = getMermaidRuntime(mermaidModule)
+
+    if (!generateMermaidDiagram || !mermaid) {
+      throw new Error(SCHEMA_VISUALIZATION_ERROR_CODES.cdnLoad)
+    }
+
+    return {generateMermaidDiagram, mermaid}
+  }
+
+  const loadFromCdn = () =>
+    withTimeout(
       Promise.all([
         import(/* @vite-ignore */ ZOD_MERMAID_CDN_URL),
         import(/* @vite-ignore */ MERMAID_CDN_URL),
-      ]).then(([zodMermaidModule, mermaidModule]) => {
-        const generateMermaidDiagram = (
-          zodMermaidModule as {
-            generateMermaidDiagram?: VisualizationLibraries['generateMermaidDiagram']
-          }
-        ).generateMermaidDiagram
-        const mermaidExport = (
-          mermaidModule as {
-            default?: MermaidLike
-          }
-        ).default
-
-        if (!generateMermaidDiagram || !mermaidExport?.initialize || !mermaidExport?.render) {
-          throw new Error(SCHEMA_VISUALIZATION_ERROR_CODES.cdnLoad)
-        }
-
-        return {
-          generateMermaidDiagram,
-          mermaid: mermaidExport,
-        }
-      }),
+      ]).then(([zodMermaidModule, mermaidModule]) =>
+        resolveVisualizationLibraries(zodMermaidModule, mermaidModule),
+      ),
       SCHEMA_VISUALIZATION_TIMINGS.cdnLoadTimeoutMs,
       SCHEMA_VISUALIZATION_ERROR_CODES.cdnLoad,
     )
+
+  const loadFromLocalPackages = async (): Promise<VisualizationLibraries> => {
+    const [zodMermaidModule, mermaidModule] = await Promise.all([
+      import('zod-mermaid'),
+      import('mermaid'),
+    ])
+    return resolveVisualizationLibraries(zodMermaidModule, mermaidModule)
+  }
+
+  if (!cachedLibrariesPromise) {
+    cachedLibrariesPromise = (async () => {
+      try {
+        return await loadFromCdn()
+      } catch (cdnError) {
+        try {
+          return await loadFromLocalPackages()
+        } catch {
+          throw cdnError
+        }
+      }
+    })()
   }
 
   try {
